@@ -4,8 +4,8 @@
   "description": "Gestión de inventario de vinos · Es Fumeral, Ibiza",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#faf9f7",
-  "theme_color": "#faf9f7",
+  "background_color": "#f8f5f0",
+  "theme_color": "#f8f5f0",
   "icons": [
     {
       "src": "/icon.svg",

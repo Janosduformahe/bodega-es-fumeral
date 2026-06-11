@@ -1,18 +1,20 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 *{box-sizing:border-box;margin:0;padding:0}
+/* Paleta de marca Es Fumeral (esfumeral.com):
+   texto marrón cálido hsl(24,44%,24%), arena #c3b4a1, terracota #8b5a47 */
 :root{
-  --bg:#faf9f7;--surface:#ffffff;--border:#e8e4df;--border2:#d4cfc8;
-  --text:#1a1815;--muted:#7a7570;--hint:#b0aba4;
-  --red:#c0392b;--redbg:#fdf0ee;--redborder:#f0c8c4;
-  --amber:#8a6000;--amberbg:#fdf8ee;--amberborder:#f0dfa0;
-  --green:#2d6a3f;--greenbg:#eef6f0;--greenborder:#a8d8b8;
-  --blue:#1a4a7a;--bluebg:#eef3fa;--blueborder:#b0ccea;
-  --purple:#4a2d7a;--purplebg:#f3eefa;--purpleborder:#c8b0ea;
-  --wine:#7a2030;
+  --bg:#f8f5f0;--surface:#fffdfa;--border:#e9e1d5;--border2:#d3c5b3;
+  --text:#583822;--muted:#8a7561;--hint:#b7a995;
+  --red:#b03a28;--redbg:#fbf0ec;--redborder:#ecc9bf;
+  --amber:#8a6000;--amberbg:#fbf6ea;--amberborder:#ecdca2;
+  --green:#4a6741;--greenbg:#f0f4ed;--greenborder:#bdd0b3;
+  --blue:#3d5a6b;--bluebg:#eef3f6;--blueborder:#bdd1dc;
+  --purple:#5d4a3a;--purplebg:#f4efe9;--purpleborder:#d8c8b8;
+  --brand:#8b5a47;
   --radius:10px;--radius-sm:6px;
-  --font-sans:var(--font-dm-sans),sans-serif;
-  --font-serif:var(--font-dm-serif),serif;
+  --font-sans:var(--font-montserrat),sans-serif;
+  --font-serif:var(--font-instrument),serif;
 }
 html{-webkit-text-size-adjust:100%}
 html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.5}
@@ -23,7 +25,7 @@ button,a,select,input[type=range]{touch-action:manipulation;-webkit-tap-highligh
 /* Foco visible en todos los interactivos */
 button:focus-visible,a:focus-visible,select:focus-visible,
 input:focus-visible,input[type=range]:focus-visible{
-  outline:2px solid var(--wine);outline-offset:2px;border-radius:var(--radius-sm)
+  outline:2px solid var(--brand);outline-offset:2px;border-radius:var(--radius-sm)
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -34,7 +36,7 @@ input:focus-visible,input[type=range]:focus-visible{
 .tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20;padding-top:env(safe-area-inset-top)}
 .tabs-inner{display:flex;flex:1;max-width:1100px;margin:0 auto}
 .tab{flex:1;padding:12px 8px;text-align:center;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;letter-spacing:0.03em;text-decoration:none;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font-sans)}
-.tab.active{color:var(--wine);border-bottom-color:var(--wine)}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand)}
 .tab svg{display:block;margin:0 auto 3px;opacity:.6}
 .tab.active svg{opacity:1}
 
@@ -43,7 +45,7 @@ input:focus-visible,input[type=range]:focus-visible{
 
 /* Header */
 .page-header{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.page-title{font-family:var(--font-serif);font-size:20px;letter-spacing:-0.3px}
+.page-title{font-family:var(--font-serif);font-size:23px;letter-spacing:0.2px}
 .page-sub{font-size:11px;color:var(--muted);margin-top:1px}
 
 /* Stats */
@@ -67,7 +69,7 @@ input:focus-visible,input[type=range]:focus-visible{
 .settings-label{font-size:12px;color:var(--muted);flex-shrink:0}
 .settings-val{font-size:13px;font-weight:500;color:var(--text);min-width:18px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums}
 input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:4px;background:var(--border2);border-radius:2px;outline:none}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;background:var(--wine);border-radius:50%;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;background:var(--brand);border-radius:50%;cursor:pointer}
 .settings-note{font-size:11px;color:var(--hint);margin-top:4px}
 
 /* Controls */
@@ -118,13 +120,13 @@ select{width:100%;height:42px;border:1px solid var(--border);border-radius:var(-
 
 /* ── DOCUMENTOS PAGE ── */
 .doc-zone{margin:0 16px 16px;border:2px dashed var(--border2);border-radius:var(--radius);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background-color .2s;background:var(--surface)}
-.doc-zone.dragover{border-color:var(--wine);background:var(--bg)}
+.doc-zone.dragover{border-color:var(--brand);background:var(--bg)}
 .doc-zone-icon{font-size:32px;margin-bottom:10px;display:block}
 .doc-zone-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px}
 .doc-zone-sub{font-size:12px;color:var(--muted)}
 .doc-type-row{display:grid;gap:8px;margin:0 16px 16px}
 .doc-type-btn{padding:12px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;text-align:center;transition:border-color .15s,background-color .15s;font-family:var(--font-sans)}
-.doc-type-btn.selected{border-color:var(--wine);background:var(--bg);box-shadow:inset 0 0 0 1px var(--wine)}
+.doc-type-btn.selected{border-color:var(--brand);background:var(--bg);box-shadow:inset 0 0 0 1px var(--brand)}
 .doc-type-btn .dt-icon{font-size:20px;margin-bottom:4px;display:block}
 .doc-type-btn .dt-label{font-size:12px;font-weight:500;color:var(--text);display:block}
 .doc-type-btn .dt-sub{font-size:11px;color:var(--muted);display:block}
@@ -166,7 +168,7 @@ select{width:100%;height:42px;border:1px solid var(--border);border-radius:var(-
 .overlay{position:fixed;inset:0;background:rgba(26,24,21,0.45);z-index:100;display:flex;align-items:flex-end;justify-content:center}
 .modal,.hist-modal{background:var(--surface);border-radius:16px 16px 0 0;padding:20px 20px calc(32px + env(safe-area-inset-bottom));width:100%;max-width:480px;overscroll-behavior:contain}
 .hist-modal{max-height:80vh;overflow-y:auto}
-.modal-title{font-family:var(--font-serif);font-size:19px;margin-bottom:3px}
+.modal-title{font-family:var(--font-serif);font-size:22px;margin-bottom:3px}
 .modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.4}
 .modal-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:block}
 .modal-input{width:100%;height:52px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:22px;font-weight:500;padding:0 14px;outline:none;margin-bottom:14px;font-variant-numeric:tabular-nums}
@@ -188,7 +190,8 @@ input[type=file]{display:none}
 /* Login */
 .login-wrap{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px 24px;width:100%;max-width:380px}
-.login-title{font-family:var(--font-serif);font-size:26px;text-align:center;margin-bottom:2px}
+.login-title{font-family:var(--font-serif);font-size:34px;text-align:center;margin-bottom:2px}
+.login-sub em{font-family:var(--font-serif);font-style:italic;font-size:14px;color:var(--brand)}
 .login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px}
 .login-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;display:block}
 .login-input{width:100%;height:48px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:16px;padding:0 14px;outline:none;margin-bottom:14px}
@@ -207,7 +210,7 @@ input[type=file]{display:none}
   .btn-confirm:hover{opacity:.85}
   .login-btn:hover{opacity:.85}
   .btn-cancel:hover,.btn-discard:hover,.btn-close-hist:hover{background:var(--bg)}
-  .doc-zone:hover{border-color:var(--wine);background:var(--bg)}
+  .doc-zone:hover{border-color:var(--brand);background:var(--bg)}
   .doc-type-btn:hover{border-color:var(--border2)}
   .btn-alert-toggle:hover{border-color:var(--text);color:var(--text)}
   .wine-card:hover{border-color:var(--border2)}
@@ -224,7 +227,7 @@ input[type=file]{display:none}
 @media (min-width:900px){
   .page{padding-left:8px;padding-right:8px}
   .page-header{padding-top:22px}
-  .page-title{font-size:26px}
+  .page-title{font-size:30px}
   .page-sub{font-size:12px}
   .controls{display:grid;grid-template-columns:2fr 1fr 1fr;align-items:start}
   .controls .selects-row{grid-template-columns:1fr 1fr}
