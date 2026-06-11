@@ -18,7 +18,8 @@ async function llamarOpenRouter(parts: ContentPart[]): Promise<{ texto: string; 
   if (!apiKey) {
     throw new Error("Falta OPENROUTER_API_KEY en las variables de entorno");
   }
-  const modelo = process.env.OPENROUTER_MODEL || "anthropic/claude-sonnet-4.5";
+  // Necesita un modelo CON VISIÓN (lee fotos y PDFs de albaranes)
+  const modelo = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
 
   const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -44,6 +45,40 @@ async function llamarOpenRouter(parts: ContentPart[]): Promise<{ texto: string; 
   const texto: string | undefined = data.choices?.[0]?.message?.content;
   if (!texto) throw new Error("OpenRouter devolvió una respuesta vacía");
   return { texto, modelo: data.model || modelo };
+}
+
+// Altas nuevas propuestas por la IA (Excel o albarán con vinos fuera de catálogo)
+function recogerNuevasReferencias(
+  parsed: Record<string, unknown>,
+  resultado: ResultadoDocumento
+) {
+  const nuevas = (parsed.nuevas_referencias ?? []) as Record<string, unknown>[];
+  for (const n of nuevas) {
+    const tipoVino = TIPOS_VINO.includes(n.tipo as TipoVino)
+      ? (n.tipo as TipoVino)
+      : "Tinto";
+    const ref = {
+      anio: Number(n.anio) || null,
+      bodega: String(n.bodega || "").trim(),
+      nombre: String(n.nombre || "").trim(),
+      tipo: tipoVino,
+      pais: String(n.pais || "España").trim(),
+      uva: n.uva ? String(n.uva) : null,
+      precio: Number(n.precio) || 0,
+      stock: Math.max(0, Math.round(Number(n.stock) || 0)),
+    };
+    if (!ref.bodega || !ref.nombre) continue;
+    resultado.nuevas_referencias!.push(ref);
+    resultado.preview!.push({
+      vino_id: -1,
+      etiqueta: `✨ ${ref.bodega} — ${ref.nombre}${ref.anio ? ` (${ref.anio})` : ""}`,
+      detalle: `Referencia nueva · ${ref.tipo} · ${ref.pais}${ref.uva ? ` · ${ref.uva}` : ""}${
+        ref.precio > 0 ? ` · ${ref.precio}€` : " · precio pendiente"
+      }`,
+      qty: `+${ref.stock}`,
+      direccion: "plus",
+    });
+  }
 }
 
 function parseJsonIA(raw: string): Record<string, unknown> {
@@ -162,32 +197,7 @@ export async function POST(req: NextRequest) {
           });
         }
       }
-      const nuevas = (parsed.nuevas_referencias ?? []) as Record<string, unknown>[];
-      for (const n of nuevas) {
-        const tipoVino = TIPOS_VINO.includes(n.tipo as TipoVino)
-          ? (n.tipo as TipoVino)
-          : "Tinto";
-        const anio = Number(n.anio) || null;
-        const ref = {
-          anio,
-          bodega: String(n.bodega || "").trim(),
-          nombre: String(n.nombre || "").trim(),
-          tipo: tipoVino,
-          pais: String(n.pais || "España").trim(),
-          uva: n.uva ? String(n.uva) : null,
-          precio: Number(n.precio) || 0,
-          stock: Math.max(0, Math.round(Number(n.stock) || 0)),
-        };
-        if (!ref.bodega || !ref.nombre) continue;
-        resultado.nuevas_referencias!.push(ref);
-        resultado.preview!.push({
-          vino_id: -1,
-          etiqueta: `✨ ${ref.bodega} — ${ref.nombre}${ref.anio ? ` (${ref.anio})` : ""}`,
-          detalle: `${ref.tipo} · ${ref.pais}${ref.uva ? ` · ${ref.uva}` : ""} · ${ref.precio}€`,
-          qty: `+${ref.stock}`,
-          direccion: "plus",
-        });
-      }
+      recogerNuevasReferencias(parsed, resultado);
       const noId = (parsed.no_identificados ?? []) as { texto: string }[];
       resultado.no_encontrados = noId.map((x) => ({ texto: String(x.texto || "") }));
     } else {
@@ -220,6 +230,10 @@ export async function POST(req: NextRequest) {
           direccion: esAlbaran ? "plus" : "minus",
           confianza: item.confianza,
         });
+      }
+      // En albaranes, los vinos fuera de catálogo se dan de alta como referencia nueva
+      if (esAlbaran) {
+        recogerNuevasReferencias(parsed, resultado);
       }
       const noEnc = (parsed.no_encontrados ?? []) as { texto: string; qty?: number }[];
       resultado.no_encontrados = noEnc.map((x) => ({

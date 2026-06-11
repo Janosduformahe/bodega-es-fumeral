@@ -20,7 +20,14 @@ Tu tarea:
   "proveedor_o_fecha": "nombre del proveedor o fecha del cierre",
   "items": [
     {"id": 5, "qty": 6, "texto_original": "texto tal como aparece en el doc", "confianza": "alta|media|baja"}
-  ],
+  ],${
+    tipo === "albaran"
+      ? `
+  "nuevas_referencias": [
+    {"anio": 2019, "bodega": "Nombre de la bodega/productor", "nombre": "Nombre del vino", "tipo": "Tinto", "pais": "Francia", "uva": "Cabernet Sauvignon", "precio": 0, "stock": 2, "texto_original": "texto tal como aparece en el doc"}
+  ],`
+      : ""
+  }
   "no_encontrados": [
     {"texto": "descripción del vino no identificado", "qty": 2}
   ]
@@ -32,7 +39,12 @@ ${catalogo}
 INSTRUCCIONES:
 - Para ${tipo === "albaran" ? "albaranes" : "cierres de caja"}, la cantidad es el número de botellas ${tipo === "albaran" ? "recibidas" : "vendidas"}.
 - Usa coincidencia aproximada de nombres (puede haber variaciones ortográficas, abreviaciones).
-- Si no estás seguro del ID, usa confianza "baja" o ponlo en no_encontrados.
+${
+  tipo === "albaran"
+    ? `- Si un vino del albarán NO existe en el catálogo pero puedes identificarlo con claridad (bodega + nombre legibles), ponlo en "nuevas_referencias" como alta nueva: separa bodega/productor y nombre del vino, deduce "tipo" (uno de: Espumoso, Blanco, Rosado, Tinto, Dulce), "pais" y "uva" usando tu conocimiento de vinos; "anio" es número o null; "stock" = botellas recibidas. "precio" = 0 (el albarán trae precio de coste, no PVP — el precio de venta lo pondrá el equipo).
+- Usa "no_encontrados" solo para líneas ilegibles o que no puedas identificar con confianza.`
+    : `- Si no estás seguro del ID, usa confianza "baja" o ponlo en no_encontrados.`
+}
 - Devuelve SOLO el JSON, nada más.`;
 }
 
