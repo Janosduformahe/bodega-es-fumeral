@@ -43,6 +43,7 @@ export default function LoginPage() {
           className="login-input"
           type="email"
           autoComplete="email"
+          spellCheck={false}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required

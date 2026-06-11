@@ -238,6 +238,7 @@ export default function InventarioPage() {
                 min={1}
                 max={12}
                 step={1}
+                aria-label="Umbral de alerta de stock bajo"
                 value={thresh}
                 onChange={(e) => updateThresh(parseInt(e.target.value))}
               />
@@ -260,6 +261,7 @@ export default function InventarioPage() {
             <input
               type="search"
               placeholder="Buscar bodega, vino, añada, uva…"
+              aria-label="Buscar en el inventario"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -332,6 +334,7 @@ export default function InventarioPage() {
                     <button
                       className="btn-v"
                       title="Venta"
+                      aria-label={`Registrar venta de ${w.bodega} ${w.nombre}`}
                       onClick={() => setModal({ mode: "venta", vino: w })}
                     >
                       −
@@ -339,11 +342,17 @@ export default function InventarioPage() {
                     <button
                       className="btn-e"
                       title="Entrada"
+                      aria-label={`Registrar entrada de ${w.bodega} ${w.nombre}`}
                       onClick={() => setModal({ mode: "entrada", vino: w })}
                     >
                       +
                     </button>
-                    <button className="btn-h" title="Historial" onClick={() => openHist(w)}>
+                    <button
+                      className="btn-h"
+                      title="Historial"
+                      aria-label={`Ver historial de ${w.bodega} ${w.nombre}`}
+                      onClick={() => openHist(w)}
+                    >
                       ✎
                     </button>
                   </div>
@@ -371,6 +380,7 @@ export default function InventarioPage() {
               ref={qtyRef}
               className="modal-input"
               type="number"
+              inputMode="numeric"
               min={1}
               value={mQty}
               onChange={(e) => setMQty(e.target.value)}
