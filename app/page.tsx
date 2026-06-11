@@ -16,12 +16,74 @@ const sc = (s: number, t: number) =>
   s === 0 ? "stock-zero" : s <= t ? "stock-low" : "stock-ok";
 const wcc = (s: number, t: number) => (s === 0 ? " zero" : s <= t ? " low" : "");
 
+/** Chip de alerta de stock bajo: desliza hacia abajo (o ×) para descartar */
+function AlertChip({ vino, onDismiss }: { vino: Vino; onDismiss: () => void }) {
+  const [dy, setDy] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const startY = useRef<number | null>(null);
+
+  function dismiss() {
+    setLeaving(true);
+    setTimeout(onDismiss, 200);
+  }
+
+  return (
+    <div
+      className={`alert-chip${vino.stock === 1 ? " critical" : ""}${dragging ? " dragging" : ""}${leaving ? " leaving" : ""}`}
+      style={{
+        transform: `translateY(${dy}px)`,
+        opacity: leaving ? 0 : 1 - Math.min(dy / 140, 0.6),
+      }}
+      onPointerDown={(e) => {
+        startY.current = e.clientY;
+        setDragging(true);
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        if (startY.current === null) return;
+        const d = e.clientY - startY.current;
+        if (d > 0) setDy(d);
+      }}
+      onPointerUp={() => {
+        setDragging(false);
+        startY.current = null;
+        if (dy > 52) dismiss();
+        else setDy(0);
+      }}
+      onPointerCancel={() => {
+        setDragging(false);
+        startY.current = null;
+        setDy(0);
+      }}
+    >
+      <span className="ac-stock">{vino.stock}</span>
+      <span className="ac-text">
+        <span className="ac-name">{vino.bodega}</span>
+        <span className="ac-sub">
+          {vino.nombre}
+          {vino.anio ? ` · ${vino.anio}` : ""}
+        </span>
+      </span>
+      <button
+        className="ac-x"
+        aria-label={`Descartar alerta de ${vino.bodega} ${vino.nombre}`}
+        onClick={dismiss}
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 export default function InventarioPage() {
   const supabase = useMemo(() => createClient(), []);
   const [wines, setWines] = useState<Vino[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [thresh, setThresh] = useState(3);
+  const [thresh, setThresh] = useState(1);
   const [showSettings, setShowSettings] = useState(false);
+  // vino_id -> stock en el momento del descarte; si el stock cambia, la alerta vuelve
+  const [dismissed, setDismissed] = useState<Record<string, number>>({});
 
   const [q, setQ] = useState("");
   const [filtTipo, setFiltTipo] = useState("");
@@ -54,11 +116,13 @@ export default function InventarioPage() {
     loadWines();
     supabase
       .from("ajustes")
-      .select("valor")
-      .eq("clave", "umbral_stock_bajo")
-      .single()
+      .select("clave, valor")
       .then(({ data }) => {
-        if (data) setThresh(Number(data.valor));
+        for (const a of data ?? []) {
+          if (a.clave === "umbral_stock_bajo") setThresh(Number(a.valor));
+          if (a.clave === "alertas_descartadas")
+            setDismissed((a.valor as Record<string, number>) ?? {});
+        }
       });
 
     // Realtime: cualquier cambio de stock en otro dispositivo se refleja aquí
@@ -95,6 +159,15 @@ export default function InventarioPage() {
       .from("ajustes")
       .update({ valor: v })
       .eq("clave", "umbral_stock_bajo");
+  }
+
+  async function dismissAlert(vino: Vino) {
+    const next = { ...dismissed, [vino.id]: vino.stock };
+    setDismissed(next);
+    await supabase
+      .from("ajustes")
+      .update({ valor: next })
+      .eq("clave", "alertas_descartadas");
   }
 
   async function confirmMovimiento() {
@@ -176,7 +249,10 @@ export default function InventarioPage() {
   const total = wines.reduce((s, w) => s + w.stock, 0);
   const sinStock = wines.filter((w) => w.stock === 0).length;
   const bajo = wines.filter((w) => w.stock > 0 && w.stock <= thresh).length;
-  const alertWines = wines.filter((w) => w.stock > 0 && w.stock <= thresh);
+  // En alerta: stock bajo y no descartada (o descartada pero el stock cambió)
+  const alertWines = wines
+    .filter((w) => w.stock > 0 && w.stock <= thresh && dismissed[w.id] !== w.stock)
+    .sort((a, b) => a.stock - b.stock);
 
   return (
     <>
@@ -215,17 +291,18 @@ export default function InventarioPage() {
         </div>
 
         {alertWines.length > 0 && (
-          <div className="alert-panel">
-            <div className="alert-header">⚠ Stock bajo — pendiente de pedir</div>
-            <div>
+          <>
+            <div className="alerts-head">
+              <span className="alerts-title">Quedan pocas</span>
+              <span className="alerts-count">{alertWines.length}</span>
+              <span className="alerts-hint">desliza ↓ para descartar</span>
+            </div>
+            <div className="alerts-row">
               {alertWines.map((w) => (
-                <div className="alert-item" key={w.id}>
-                  {w.bodega} — {w.nombre}
-                  {w.anio ? ` (${w.anio})` : ""} — <strong>{w.stock} bot.</strong>
-                </div>
+                <AlertChip key={w.id} vino={w} onDismiss={() => dismissAlert(w)} />
               ))}
             </div>
-          </div>
+          </>
         )}
 
         {showSettings && (
@@ -246,8 +323,8 @@ export default function InventarioPage() {
               <span className="settings-label">bot.</span>
             </div>
             <div className="settings-note">
-              Los vinos con 0 botellas siempre aparecen en rojo. El umbral es
-              compartido por todo el equipo.
+              Avisa cuando queden ≤{thresh} botellas. Las alertas descartadas
+              vuelven si el stock cambia. Compartido por todo el equipo.
             </div>
           </div>
         )}
