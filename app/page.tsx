@@ -16,12 +16,12 @@ const sc = (s: number, t: number) =>
   s === 0 ? "stock-zero" : s <= t ? "stock-low" : "stock-ok";
 const wcc = (s: number, t: number) => (s === 0 ? " zero" : s <= t ? " low" : "");
 
-/** Chip de alerta de stock bajo: desliza hacia abajo (o ×) para descartar */
-function AlertChip({ vino, onDismiss }: { vino: Vino; onDismiss: () => void }) {
-  const [dy, setDy] = useState(0);
+/** Fila de alerta de stock bajo: desliza hacia el lado (o ×) para descartar */
+function AlertRow({ vino, onDismiss }: { vino: Vino; onDismiss: () => void }) {
+  const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const startY = useRef<number | null>(null);
+  const startX = useRef<number | null>(null);
 
   function dismiss() {
     setLeaving(true);
@@ -30,37 +30,36 @@ function AlertChip({ vino, onDismiss }: { vino: Vino; onDismiss: () => void }) {
 
   return (
     <div
-      className={`alert-chip${vino.stock === 1 ? " critical" : ""}${dragging ? " dragging" : ""}${leaving ? " leaving" : ""}`}
+      className={`alert-row${vino.stock === 1 ? " critical" : ""}${dragging ? " dragging" : ""}${leaving ? " leaving" : ""}`}
       style={{
-        transform: `translateY(${dy}px)`,
-        opacity: leaving ? 0 : 1 - Math.min(dy / 140, 0.6),
+        transform: `translateX(${dx}px)`,
+        opacity: leaving ? 0 : 1 - Math.min(Math.abs(dx) / 200, 0.6),
       }}
       onPointerDown={(e) => {
-        startY.current = e.clientY;
+        startX.current = e.clientX;
         setDragging(true);
         e.currentTarget.setPointerCapture(e.pointerId);
       }}
       onPointerMove={(e) => {
-        if (startY.current === null) return;
-        const d = e.clientY - startY.current;
-        if (d > 0) setDy(d);
+        if (startX.current === null) return;
+        setDx(e.clientX - startX.current);
       }}
       onPointerUp={() => {
         setDragging(false);
-        startY.current = null;
-        if (dy > 52) dismiss();
-        else setDy(0);
+        startX.current = null;
+        if (Math.abs(dx) > 72) dismiss();
+        else setDx(0);
       }}
       onPointerCancel={() => {
         setDragging(false);
-        startY.current = null;
-        setDy(0);
+        startX.current = null;
+        setDx(0);
       }}
     >
-      <span className="ac-stock">{vino.stock}</span>
-      <span className="ac-text">
-        <span className="ac-name">{vino.bodega}</span>
-        <span className="ac-sub">
+      <span className="ar-qty">{vino.stock}</span>
+      <span className="ar-text">
+        <span className="ar-name">{vino.bodega}</span>
+        <span className="ar-sub">
           {vino.nombre}
           {vino.anio ? ` · ${vino.anio}` : ""}
         </span>
@@ -84,6 +83,7 @@ export default function InventarioPage() {
   const [showSettings, setShowSettings] = useState(false);
   // vino_id -> stock en el momento del descarte; si el stock cambia, la alerta vuelve
   const [dismissed, setDismissed] = useState<Record<string, number>>({});
+  const [alertsOpen, setAlertsOpen] = useState(true);
 
   const [q, setQ] = useState("");
   const [filtTipo, setFiltTipo] = useState("");
@@ -291,18 +291,39 @@ export default function InventarioPage() {
         </div>
 
         {alertWines.length > 0 && (
-          <>
-            <div className="alerts-head">
-              <span className="alerts-title">Quedan pocas</span>
-              <span className="alerts-count">{alertWines.length}</span>
-              <span className="alerts-hint">desliza ↓ para descartar</span>
-            </div>
-            <div className="alerts-row">
-              {alertWines.map((w) => (
-                <AlertChip key={w.id} vino={w} onDismiss={() => dismissAlert(w)} />
+          <div className="alerts-card">
+            <button
+              className="alerts-bar"
+              onClick={() => setAlertsOpen((o) => !o)}
+              aria-expanded={alertsOpen}
+            >
+              <span className="alerts-title">Quedan pocas botellas</span>
+              <span
+                className={`alerts-count${alertWines.some((w) => w.stock === 1) ? " has-critical" : ""}`}
+              >
+                {alertWines.length}
+              </span>
+              {alertsOpen && (
+                <span className="alerts-hint">desliza para descartar</span>
+              )}
+              <svg
+                className={`alerts-chevron${alertsOpen ? " open" : ""}`}
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                aria-hidden="true"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {alertsOpen &&
+              alertWines.map((w) => (
+                <AlertRow key={w.id} vino={w} onDismiss={() => dismissAlert(w)} />
               ))}
-            </div>
-          </>
+          </div>
         )}
 
         {showSettings && (
