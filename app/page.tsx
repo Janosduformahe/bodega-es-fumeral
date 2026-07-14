@@ -2,21 +2,44 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Tabs from "@/components/Tabs";
+import {
+  IconCheck,
+  IconChevronDown,
+  IconClock,
+  IconSearch,
+  IconSliders,
+  IconWine,
+  IconX,
+} from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
-import { fmtFecha, nombreVino, type Movimiento, type Vino } from "@/lib/types";
+import {
+  fmtFecha,
+  nombreVino,
+  type Movimiento,
+  type TipoVino,
+  type Vino,
+} from "@/lib/types";
 
-const PAIS_BADGE: Record<string, string> = {
-  España: "b-es",
-  Francia: "b-fr",
-  Italia: "b-it",
-  Argentina: "b-ar",
+const TIPOS: TipoVino[] = ["Espumoso", "Blanco", "Rosado", "Tinto", "Dulce"];
+const TIPO_DOT: Record<TipoVino, string> = {
+  Tinto: "var(--w-tinto)",
+  Blanco: "var(--w-blanco)",
+  Rosado: "var(--w-rosado)",
+  Espumoso: "var(--w-espumoso)",
+  Dulce: "var(--w-dulce)",
 };
-const cc = (p: string) => PAIS_BADGE[p] || "b-ot";
+const ORDENES: { v: string; label: string }[] = [
+  { v: "bodega", label: "Por bodega (A–Z)" },
+  { v: "stock", label: "Stock: menos primero" },
+  { v: "stock_desc", label: "Stock: más primero" },
+  { v: "precio", label: "Precio: más caro primero" },
+  { v: "anio", label: "Añada: más reciente primero" },
+];
+
 const sc = (s: number, t: number) =>
   s === 0 ? "stock-zero" : s <= t ? "stock-low" : "stock-ok";
-const wcc = (s: number, t: number) => (s === 0 ? " zero" : s <= t ? " low" : "");
 
-/** Fila de alerta de stock bajo: desliza hacia el lado (o ×) para descartar */
+/** Fila de alerta: desliza hacia el lado (o ×) para descartar */
 function AlertRow({ vino, onDismiss }: { vino: Vino; onDismiss: () => void }) {
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -25,52 +48,57 @@ function AlertRow({ vino, onDismiss }: { vino: Vino; onDismiss: () => void }) {
 
   function dismiss() {
     setLeaving(true);
-    setTimeout(onDismiss, 200);
+    setTimeout(onDismiss, 220);
   }
 
   return (
-    <div
-      className={`alert-row${vino.stock === 1 ? " critical" : ""}${dragging ? " dragging" : ""}${leaving ? " leaving" : ""}`}
-      style={{
-        transform: `translateX(${dx}px)`,
-        opacity: leaving ? 0 : 1 - Math.min(Math.abs(dx) / 200, 0.6),
-      }}
-      onPointerDown={(e) => {
-        startX.current = e.clientX;
-        setDragging(true);
-        e.currentTarget.setPointerCapture(e.pointerId);
-      }}
-      onPointerMove={(e) => {
-        if (startX.current === null) return;
-        setDx(e.clientX - startX.current);
-      }}
-      onPointerUp={() => {
-        setDragging(false);
-        startX.current = null;
-        if (Math.abs(dx) > 72) dismiss();
-        else setDx(0);
-      }}
-      onPointerCancel={() => {
-        setDragging(false);
-        startX.current = null;
-        setDx(0);
-      }}
-    >
-      <span className="ar-qty">{vino.stock}</span>
-      <span className="ar-text">
-        <span className="ar-name">{vino.bodega}</span>
-        <span className="ar-sub">
-          {vino.nombre}
-          {vino.anio ? ` · ${vino.anio}` : ""}
-        </span>
+    <div className="alert-track">
+      <span className="alert-track-check" aria-hidden="true">
+        <IconCheck size={16} /> Visto
       </span>
-      <button
-        className="ac-x"
-        aria-label={`Descartar alerta de ${vino.bodega} ${vino.nombre}`}
-        onClick={dismiss}
+      <div
+        className={`alert-row${vino.stock === 1 ? " critical" : ""}${dragging ? " dragging" : ""}${leaving ? " leaving" : ""}`}
+        style={{
+          transform: `translateX(${dx}px)`,
+          opacity: leaving ? 0 : 1 - Math.min(Math.abs(dx) / 220, 0.5),
+        }}
+        onPointerDown={(e) => {
+          startX.current = e.clientX;
+          setDragging(true);
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (startX.current === null) return;
+          setDx(e.clientX - startX.current);
+        }}
+        onPointerUp={() => {
+          setDragging(false);
+          startX.current = null;
+          if (Math.abs(dx) > 72) dismiss();
+          else setDx(0);
+        }}
+        onPointerCancel={() => {
+          setDragging(false);
+          startX.current = null;
+          setDx(0);
+        }}
       >
-        ×
-      </button>
+        <span className="ar-qty">{vino.stock}</span>
+        <span className="ar-text">
+          <span className="ar-name">{vino.bodega}</span>
+          <span className="ar-sub">
+            {vino.nombre}
+            {vino.anio ? ` · ${vino.anio}` : ""}
+          </span>
+        </span>
+        <button
+          className="ac-x"
+          aria-label={`Descartar alerta de ${vino.bodega} ${vino.nombre}`}
+          onClick={dismiss}
+        >
+          <IconX size={15} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -81,7 +109,6 @@ export default function InventarioPage() {
   const [loaded, setLoaded] = useState(false);
   const [thresh, setThresh] = useState(1);
   const [showSettings, setShowSettings] = useState(false);
-  // vino_id -> stock en el momento del descarte; si el stock cambia, la alerta vuelve
   const [dismissed, setDismissed] = useState<Record<string, number>>({});
   const [alertsOpen, setAlertsOpen] = useState(true);
 
@@ -90,15 +117,14 @@ export default function InventarioPage() {
   const [filtPais, setFiltPais] = useState("");
   const [filtStock, setFiltStock] = useState("");
   const [sortBy, setSortBy] = useState("bodega");
+  const [sheet, setSheet] = useState<null | "filtros">(null);
 
-  // modal venta/entrada
   const [modal, setModal] = useState<{ mode: "venta" | "entrada"; vino: Vino } | null>(null);
   const [mQty, setMQty] = useState("1");
   const [mNote, setMNote] = useState("");
   const [saving, setSaving] = useState(false);
   const qtyRef = useRef<HTMLInputElement>(null);
 
-  // modal historial
   const [histVino, setHistVino] = useState<Vino | null>(null);
   const [histRows, setHistRows] = useState<Movimiento[] | null>(null);
 
@@ -125,7 +151,6 @@ export default function InventarioPage() {
         }
       });
 
-    // Realtime: cualquier cambio de stock en otro dispositivo se refleja aquí
     const channel = supabase
       .channel("vinos-cambios")
       .on(
@@ -155,19 +180,13 @@ export default function InventarioPage() {
 
   async function updateThresh(v: number) {
     setThresh(v);
-    await supabase
-      .from("ajustes")
-      .update({ valor: v })
-      .eq("clave", "umbral_stock_bajo");
+    await supabase.from("ajustes").update({ valor: v }).eq("clave", "umbral_stock_bajo");
   }
 
   async function dismissAlert(vino: Vino) {
     const next = { ...dismissed, [vino.id]: vino.stock };
     setDismissed(next);
-    await supabase
-      .from("ajustes")
-      .update({ valor: next })
-      .eq("clave", "alertas_descartadas");
+    await supabase.from("ajustes").update({ valor: next }).eq("clave", "alertas_descartadas");
   }
 
   async function confirmMovimiento() {
@@ -190,6 +209,7 @@ export default function InventarioPage() {
       alert("Error: " + error.message);
       return;
     }
+    if (typeof navigator !== "undefined") navigator.vibrate?.(10);
     const v = data as Vino;
     setWines((prev) => prev.map((w) => (w.id === v.id ? v : w)));
     setModal(null);
@@ -209,10 +229,7 @@ export default function InventarioPage() {
     setHistRows((data as Movimiento[]) || []);
   }
 
-  const paises = useMemo(
-    () => [...new Set(wines.map((w) => w.pais))].sort(),
-    [wines]
-  );
+  const paises = useMemo(() => [...new Set(wines.map((w) => w.pais))].sort(), [wines]);
 
   const list = useMemo(() => {
     const ql = q.toLowerCase();
@@ -237,8 +254,6 @@ export default function InventarioPage() {
     filtered.sort((a, b) => {
       if (sortBy === "stock") return a.stock - b.stock;
       if (sortBy === "stock_desc") return b.stock - a.stock;
-      if (sortBy === "tipo")
-        return a.tipo.localeCompare(b.tipo) || a.bodega.localeCompare(b.bodega);
       if (sortBy === "precio") return b.precio - a.precio;
       if (sortBy === "anio") return (b.anio ?? 9999) - (a.anio ?? 9999);
       return a.bodega.localeCompare(b.bodega);
@@ -246,13 +261,84 @@ export default function InventarioPage() {
     return filtered;
   }, [wines, q, filtTipo, filtPais, filtStock, sortBy, thresh]);
 
+  // Secciones por tipo (estilo carta) cuando no hay tipo elegido y el orden lo permite
+  const sections = useMemo(() => {
+    if (filtTipo || sortBy !== "bodega") return null;
+    const out: { tipo: TipoVino; wines: Vino[] }[] = [];
+    for (const t of TIPOS) {
+      const arr = list.filter((w) => w.tipo === t);
+      if (arr.length) out.push({ tipo: t, wines: arr });
+    }
+    return out;
+  }, [list, filtTipo, sortBy]);
+
   const total = wines.reduce((s, w) => s + w.stock, 0);
   const sinStock = wines.filter((w) => w.stock === 0).length;
   const bajo = wines.filter((w) => w.stock > 0 && w.stock <= thresh).length;
-  // En alerta: stock bajo y no descartada (o descartada pero el stock cambió)
   const alertWines = wines
     .filter((w) => w.stock > 0 && w.stock <= thresh && dismissed[w.id] !== w.stock)
     .sort((a, b) => a.stock - b.stock);
+
+  const hoy = new Date().toLocaleDateString("es-ES", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  function WineCard({ w }: { w: Vino }) {
+    return (
+      <div
+        className={`wine-card t-${w.tipo}${w.stock === 0 ? " agotado" : ""}`}
+        aria-label={`${nombreVino(w)}, ${w.tipo}, ${w.stock} botellas`}
+      >
+        <div className="wc-top">
+          <div className="wc-bodega">{w.bodega}</div>
+          <div className={`wc-stock ${sc(w.stock, thresh)}`} key={w.stock}>
+            {w.stock}
+          </div>
+        </div>
+        <div className="wc-meta">
+          {w.nombre}
+          {w.anio ? ` · ${w.anio}` : ""}
+        </div>
+        <div className="wc-meta2">
+          {w.uva && w.uva !== "—" ? `${w.uva} · ` : ""}
+          {w.pais}
+        </div>
+        <div className="wc-bottom">
+          <div className="wc-badges">
+            {w.precio > 0 && <span className="badge b-price">{w.precio} €</span>}
+          </div>
+          <div className="wc-actions">
+            <button
+              className="btn-h"
+              title="Historial"
+              aria-label={`Ver historial de ${w.bodega} ${w.nombre}`}
+              onClick={() => openHist(w)}
+            >
+              <IconClock size={18} />
+            </button>
+            <button
+              className="btn-v"
+              title="Venta"
+              aria-label={`Registrar venta de ${w.bodega} ${w.nombre}`}
+              onClick={() => setModal({ mode: "venta", vino: w })}
+            >
+              −
+            </button>
+            <button
+              className="btn-e"
+              title="Entrada"
+              aria-label={`Registrar entrada de ${w.bodega} ${w.nombre}`}
+              onClick={() => setModal({ mode: "entrada", vino: w })}
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -260,34 +346,47 @@ export default function InventarioPage() {
       <div className="page">
         <div className="page-header">
           <div>
+            <span className="eyebrow">Es Fumeral · Cala Nova</span>
             <div className="page-title">Mi Bodega</div>
-            <div className="page-sub">Es Fumeral · Gestión de inventario</div>
+            <div className="page-sub">{hoy}</div>
           </div>
           <button
             className={`btn-alert-toggle${showSettings ? " active" : ""}`}
             onClick={() => setShowSettings((s) => !s)}
           >
-            ⚙ Alertas
+            <IconSliders size={14} /> Alertas
           </button>
         </div>
 
-        <div className="stats-grid">
-          <div className="stat">
+        <div className="stats-grid" role="group" aria-label="Resumen y filtros rápidos">
+          <button
+            className={`stat${filtStock === "" ? " active" : ""}`}
+            onClick={() => setFiltStock("")}
+          >
             <div className="stat-label">Referencias</div>
             <div className="stat-value">{wines.length}</div>
-          </div>
-          <div className="stat">
+          </button>
+          <button
+            className={`stat${filtStock === "ok" ? " active" : ""}`}
+            onClick={() => setFiltStock(filtStock === "ok" ? "" : "ok")}
+          >
             <div className="stat-label">Botellas</div>
             <div className="stat-value">{total}</div>
-          </div>
-          <div className="stat">
-            <div className="stat-label">Stock bajo (≤{thresh})</div>
+          </button>
+          <button
+            className={`stat${filtStock === "low" ? " active" : ""}`}
+            onClick={() => setFiltStock(filtStock === "low" ? "" : "low")}
+          >
+            <div className="stat-label">Stock bajo</div>
             <div className="stat-value warn">{bajo}</div>
-          </div>
-          <div className="stat">
+          </button>
+          <button
+            className={`stat${filtStock === "zero" ? " active" : ""}`}
+            onClick={() => setFiltStock(filtStock === "zero" ? "" : "zero")}
+          >
             <div className="stat-label">Sin stock</div>
             <div className="stat-value danger">{sinStock}</div>
-          </div>
+          </button>
         </div>
 
         {alertWines.length > 0 && (
@@ -303,21 +402,12 @@ export default function InventarioPage() {
               >
                 {alertWines.length}
               </span>
-              {alertsOpen && (
-                <span className="alerts-hint">desliza para descartar</span>
-              )}
-              <svg
+              {alertsOpen && <span className="alerts-hint">desliza para descartar</span>}
+              <IconChevronDown
+                size={14}
+                strokeWidth={2.5}
                 className={`alerts-chevron${alertsOpen ? " open" : ""}`}
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                aria-hidden="true"
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
+              />
             </button>
             {alertsOpen &&
               alertWines.map((w) => (
@@ -344,18 +434,15 @@ export default function InventarioPage() {
               <span className="settings-label">bot.</span>
             </div>
             <div className="settings-note">
-              Avisa cuando queden ≤{thresh} botellas. Las alertas descartadas
-              vuelven si el stock cambia. Compartido por todo el equipo.
+              Las alertas descartadas vuelven si el stock cambia. Compartido por todo el
+              equipo.
             </div>
           </div>
         )}
 
         <div className="controls">
           <div className="search-wrap">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
+            <IconSearch size={16} />
             <input
               type="search"
               placeholder="Buscar bodega, vino, añada, uva…"
@@ -364,42 +451,40 @@ export default function InventarioPage() {
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
-          <div className="selects-row">
-            <select value={filtTipo} onChange={(e) => setFiltTipo(e.target.value)}>
-              <option value="">Todos los tipos</option>
-              <option>Espumoso</option>
-              <option>Blanco</option>
-              <option>Rosado</option>
-              <option>Tinto</option>
-              <option>Dulce</option>
-            </select>
-            <select value={filtPais} onChange={(e) => setFiltPais(e.target.value)}>
-              <option value="">Todos los países</option>
-              {paises.map((p) => (
-                <option key={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-          <div className="selects-row">
-            <select value={filtStock} onChange={(e) => setFiltStock(e.target.value)}>
-              <option value="">Todo el stock</option>
-              <option value="ok">Con stock</option>
-              <option value="low">Stock bajo</option>
-              <option value="zero">Sin stock</option>
-            </select>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="bodega">Orden: bodega</option>
-              <option value="stock">Orden: stock ↑</option>
-              <option value="stock_desc">Orden: stock ↓</option>
-              <option value="tipo">Orden: tipo</option>
-              <option value="precio">Orden: precio</option>
-              <option value="anio">Orden: añada</option>
-            </select>
-          </div>
+        </div>
+
+        <div className="chips-row" role="group" aria-label="Filtrar por tipo de vino">
+          <button
+            className={`chip${filtTipo === "" ? " on" : ""}`}
+            style={{ "--dotc": "var(--brand)" } as React.CSSProperties}
+            onClick={() => setFiltTipo("")}
+          >
+            Todos
+          </button>
+          {TIPOS.map((t) => (
+            <button
+              key={t}
+              className={`chip${filtTipo === t ? " on" : ""}`}
+              style={{ "--dotc": TIPO_DOT[t] } as React.CSSProperties}
+              onClick={() => setFiltTipo(filtTipo === t ? "" : t)}
+            >
+              <span className="dot" aria-hidden="true" />
+              {t}
+            </button>
+          ))}
+          <button
+            className={`chip${filtPais || sortBy !== "bodega" ? " on" : ""}`}
+            style={{ "--dotc": "var(--brand)" } as React.CSSProperties}
+            onClick={() => setSheet("filtros")}
+          >
+            <IconSliders size={14} />
+            {filtPais || (sortBy !== "bodega" ? "Orden" : "Filtros")}
+            {filtPais && sortBy !== "bodega" ? " · orden" : ""}
+          </button>
         </div>
 
         <div className="section-hdr">
-          <span className="section-hdr-label">Referencias</span>
+          <span className="section-hdr-label">La cava</span>
           <span className="section-hdr-count">{list.length} vinos</span>
         </div>
 
@@ -407,59 +492,102 @@ export default function InventarioPage() {
           {!loaded ? (
             <div className="empty">Cargando bodega…</div>
           ) : list.length === 0 ? (
-            <div className="empty">No se encontraron vinos</div>
-          ) : (
-            list.map((w) => (
-              <div className={`wine-card${wcc(w.stock, thresh)}`} key={w.id}>
-                <div className="wc-top">
-                  <div className="wc-bodega">{w.bodega}</div>
-                  <div className={`wc-stock ${sc(w.stock, thresh)}`}>{w.stock}</div>
+            <div className="empty">
+              <IconWine size={40} strokeWidth={1.25} />
+              <em>Nada con ese nombre en la cava</em>
+            </div>
+          ) : sections ? (
+            sections.map((sec) => (
+              <div key={sec.tipo} style={{ display: "contents" }}>
+                <div className="wine-sec">
+                  <span
+                    className="wine-sec-name"
+                    style={{ "--dotc": TIPO_DOT[sec.tipo] } as React.CSSProperties}
+                  >
+                    <span className="dot" aria-hidden="true" />
+                    {sec.tipo}s
+                  </span>
+                  <span className="wine-sec-rule" aria-hidden="true" />
+                  <span className="wine-sec-count">{sec.wines.length}</span>
                 </div>
-                <div className="wc-meta">
-                  {w.anio ? `${w.anio} · ` : ""}
-                  {w.nombre}
-                  {w.uva && w.uva !== "—" ? ` · ${w.uva}` : ""}
-                </div>
-                <div className="wc-bottom">
-                  <div className="wc-badges">
-                    <span className={`badge ${cc(w.pais)}`}>{w.pais}</span>
-                    <span className="badge b-tipo">{w.tipo}</span>
-                    {w.precio > 0 && (
-                      <span className="badge b-price">{w.precio}€</span>
-                    )}
-                  </div>
-                  <div className="wc-actions">
-                    <button
-                      className="btn-v"
-                      title="Venta"
-                      aria-label={`Registrar venta de ${w.bodega} ${w.nombre}`}
-                      onClick={() => setModal({ mode: "venta", vino: w })}
-                    >
-                      −
-                    </button>
-                    <button
-                      className="btn-e"
-                      title="Entrada"
-                      aria-label={`Registrar entrada de ${w.bodega} ${w.nombre}`}
-                      onClick={() => setModal({ mode: "entrada", vino: w })}
-                    >
-                      +
-                    </button>
-                    <button
-                      className="btn-h"
-                      title="Historial"
-                      aria-label={`Ver historial de ${w.bodega} ${w.nombre}`}
-                      onClick={() => openHist(w)}
-                    >
-                      ✎
-                    </button>
-                  </div>
-                </div>
+                {sec.wines.map((w) => (
+                  <WineCard key={w.id} w={w} />
+                ))}
               </div>
             ))
+          ) : (
+            list.map((w) => <WineCard key={w.id} w={w} />)
           )}
         </div>
       </div>
+
+      {sheet === "filtros" && (
+        <div
+          className="overlay"
+          onClick={(e) => e.target === e.currentTarget && setSheet(null)}
+        >
+          <div className="hist-modal">
+            <div className="grabber" aria-hidden="true" />
+            <div className="modal-title">Filtrar y ordenar</div>
+            <div className="sheet-sec">
+              <span className="eyebrow">Orden</span>
+              <div>
+                {ORDENES.map((o) => (
+                  <button
+                    key={o.v}
+                    className={`sheet-row${sortBy === o.v ? " sel" : ""}`}
+                    onClick={() => setSortBy(o.v)}
+                  >
+                    {o.label}
+                    {sortBy === o.v && (
+                      <span className="check">
+                        <IconCheck size={16} />
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="sheet-sec">
+              <span className="eyebrow">País</span>
+              <div className="sheet-opts">
+                <button
+                  className={`sheet-row${filtPais === "" ? " sel" : ""}`}
+                  onClick={() => setFiltPais("")}
+                >
+                  Todos los países
+                  {filtPais === "" && (
+                    <span className="check">
+                      <IconCheck size={16} />
+                    </span>
+                  )}
+                </button>
+                {paises.map((p) => (
+                  <button
+                    key={p}
+                    className={`sheet-row${filtPais === p ? " sel" : ""}`}
+                    onClick={() => setFiltPais(filtPais === p ? "" : p)}
+                  >
+                    {p}
+                    {filtPais === p && (
+                      <span className="check">
+                        <IconCheck size={16} />
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              className="btn-confirm"
+              style={{ width: "100%", marginTop: 14 }}
+              onClick={() => setSheet(null)}
+            >
+              Ver {list.length} vinos
+            </button>
+          </div>
+        </div>
+      )}
 
       {modal && (
         <div
@@ -467,6 +595,7 @@ export default function InventarioPage() {
           onClick={(e) => e.target === e.currentTarget && setModal(null)}
         >
           <div className="modal">
+            <div className="grabber" aria-hidden="true" />
             <div className="modal-title">
               {modal.mode === "venta" ? "Registrar venta" : "Registrar entrada"}
             </div>
@@ -515,6 +644,7 @@ export default function InventarioPage() {
           onClick={(e) => e.target === e.currentTarget && setHistVino(null)}
         >
           <div className="hist-modal">
+            <div className="grabber" aria-hidden="true" />
             <div className="modal-title" style={{ marginBottom: 2 }}>
               {histVino.bodega}
             </div>
@@ -537,7 +667,7 @@ export default function InventarioPage() {
                     <span className={h.qty < 0 ? "hist-v" : "hist-e"}>
                       {h.qty < 0 ? `−${-h.qty}` : `+${h.qty}`} {h.tipo}
                     </span>
-                    <span style={{ color: "var(--muted)" }}>
+                    <span style={{ color: "var(--muted2)" }}>
                       {h.stock_prev}→{h.stock_nuevo}
                     </span>
                     <div className="hist-meta">

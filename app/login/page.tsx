@@ -32,10 +32,12 @@ export default function LoginPage() {
   return (
     <div className="login-wrap">
       <form className="login-card" onSubmit={handleSubmit}>
-        <div className="login-title">Mi Bodega</div>
-        <div className="login-sub">
-          <em>Es Fumeral</em> · Cala Nova, Ibiza
+        <div className="login-eyebrow">
+          <span className="eyebrow">Es Fumeral · Cala Nova</span>
         </div>
+        <div className="login-title">Mi Bodega</div>
+        <div className="login-sub">La cava del restaurante</div>
+        <div className="login-rule" aria-hidden="true" />
         {error && <div className="login-error">{error}</div>}
         <label className="login-label" htmlFor="email">
           Email

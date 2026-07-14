@@ -2,6 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Tabs from "@/components/Tabs";
+import {
+  IconFileUp,
+  IconPackage,
+  IconReceipt,
+  IconTable,
+} from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 import {
   fmtFecha,
@@ -137,6 +143,7 @@ export default function DocumentosPage() {
       <div className="page">
         <div className="page-header">
           <div>
+            <span className="eyebrow">Es Fumeral · Cala Nova</span>
             <div className="page-title">Documentos</div>
             <div className="page-sub">Albaranes, cierres de caja y Excel</div>
           </div>
@@ -148,7 +155,9 @@ export default function DocumentosPage() {
             className={`doc-type-btn${docType === "albaran" ? " selected" : ""}`}
             onClick={() => setDocType("albaran")}
           >
-            <span className="dt-icon">📦</span>
+            <span className="dt-icon">
+              <IconPackage size={22} />
+            </span>
             <span className="dt-label">Albarán</span>
             <span className="dt-sub">Entrada stock</span>
           </button>
@@ -156,7 +165,9 @@ export default function DocumentosPage() {
             className={`doc-type-btn${docType === "cierre" ? " selected" : ""}`}
             onClick={() => setDocType("cierre")}
           >
-            <span className="dt-icon">🧾</span>
+            <span className="dt-icon">
+              <IconReceipt size={22} />
+            </span>
             <span className="dt-label">Cierre caja</span>
             <span className="dt-sub">Ventas día</span>
           </button>
@@ -164,7 +175,9 @@ export default function DocumentosPage() {
             className={`doc-type-btn${docType === "excel" ? " selected" : ""}`}
             onClick={() => setDocType("excel")}
           >
-            <span className="dt-icon">📊</span>
+            <span className="dt-icon">
+              <IconTable size={22} />
+            </span>
             <span className="dt-label">Excel</span>
             <span className="dt-sub">Actualizar todo</span>
           </button>
@@ -180,11 +193,19 @@ export default function DocumentosPage() {
           onDragLeave={() => setDragover(false)}
           onDrop={handleDrop}
         >
-          <span className="doc-zone-icon">{docType === "excel" ? "📊" : "📄"}</span>
+          <span className="doc-zone-icon">
+            {docType === "excel" ? (
+              <IconTable size={30} strokeWidth={1.5} />
+            ) : (
+              <IconFileUp size={30} strokeWidth={1.5} />
+            )}
+          </span>
           <div className="doc-zone-title">
             {docType === "excel"
-              ? "Sube tu Excel actualizado"
-              : "Sube o arrastra el documento aquí"}
+              ? "Suelta aquí tu Excel actualizado…"
+              : docType === "albaran"
+                ? "Suelta aquí el albarán…"
+                : "Suelta aquí el cierre de caja…"}
           </div>
           <div className="doc-zone-sub">
             {docType === "excel"
@@ -210,7 +231,7 @@ export default function DocumentosPage() {
             <div className="dp-title">
               {processing ? (
                 <>
-                  <span className="spin">⟳</span> Analizando documento…
+                  <span className="spinner" aria-hidden="true" /> Analizando documento…
                 </>
               ) : (
                 "Error al procesar"

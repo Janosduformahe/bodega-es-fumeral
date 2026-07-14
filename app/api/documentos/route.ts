@@ -71,7 +71,7 @@ function recogerNuevasReferencias(
     resultado.nuevas_referencias!.push(ref);
     resultado.preview!.push({
       vino_id: -1,
-      etiqueta: `✨ ${ref.bodega} — ${ref.nombre}${ref.anio ? ` (${ref.anio})` : ""}`,
+      etiqueta: `${ref.bodega} — ${ref.nombre}${ref.anio ? ` (${ref.anio})` : ""}`,
       detalle: `Referencia nueva · ${ref.tipo} · ${ref.pais}${ref.uva ? ` · ${ref.uva}` : ""}${
         ref.precio > 0 ? ` · ${ref.precio}€` : " · precio pendiente"
       }`,
