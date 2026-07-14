@@ -1,20 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Montserrat, Instrument_Serif } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-// Tipografías de la marca Es Fumeral (esfumeral.com):
-// Montserrat para texto/UI e Instrument Serif para titulares
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
+// Inter: tipografía operativa de máxima legibilidad para uso diario;
+// la identidad Es Fumeral la llevan el color y el espaciado, no la fuente
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument",
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -40,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${montserrat.variable} ${instrumentSerif.variable}`}>
+    <html lang="es" className={inter.variable}>
       <body>{children}</body>
     </html>
   );

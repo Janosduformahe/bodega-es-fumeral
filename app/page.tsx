@@ -346,7 +346,6 @@ export default function InventarioPage() {
       <div className="page">
         <div className="page-header">
           <div>
-            <span className="eyebrow">Es Fumeral · Cala Nova</span>
             <div className="page-title">Mi Bodega</div>
             <div className="page-sub">{hoy}</div>
           </div>
@@ -484,7 +483,7 @@ export default function InventarioPage() {
         </div>
 
         <div className="section-hdr">
-          <span className="section-hdr-label">La cava</span>
+          <span className="section-hdr-label">Vinos</span>
           <span className="section-hdr-count">{list.length} vinos</span>
         </div>
 

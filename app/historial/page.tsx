@@ -28,7 +28,6 @@ export default function HistorialPage() {
       <div className="page">
         <div className="page-header">
           <div>
-            <span className="eyebrow">Es Fumeral · Cala Nova</span>
             <div className="page-title">Historial</div>
             <div className="page-sub">Últimos movimientos de toda la bodega</div>
           </div>

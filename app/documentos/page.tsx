@@ -143,7 +143,6 @@ export default function DocumentosPage() {
       <div className="page">
         <div className="page-header">
           <div>
-            <span className="eyebrow">Es Fumeral · Cala Nova</span>
             <div className="page-title">Documentos</div>
             <div className="page-sub">Albaranes, cierres de caja y Excel</div>
           </div>
