@@ -110,7 +110,7 @@ export default function InventarioPage() {
   const [thresh, setThresh] = useState(1);
   const [showSettings, setShowSettings] = useState(false);
   const [dismissed, setDismissed] = useState<Record<string, number>>({});
-  const [alertsOpen, setAlertsOpen] = useState(true);
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   const [q, setQ] = useState("");
   const [filtTipo, setFiltTipo] = useState("");
