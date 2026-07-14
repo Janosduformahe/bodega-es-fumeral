@@ -209,13 +209,15 @@ export default function DocumentosPage() {
           <div className="doc-zone-sub">
             {docType === "excel"
               ? "Archivos .xlsx, .xls o .csv — actualiza stock, precios y referencias nuevas"
-              : "PDF, imagen (JPG, PNG) · Escaneados o digitales"}
+              : docType === "cierre"
+                ? "CSV/Excel exportado del TPV (máxima precisión), PDF o foto"
+                : "PDF, imagen (JPG, PNG) o CSV/Excel del proveedor"}
           </div>
         </div>
         <input
           ref={fileRef}
           type="file"
-          accept=".pdf,.jpg,.jpeg,.png,.webp"
+          accept=".pdf,.jpg,.jpeg,.png,.webp,.csv,.xlsx,.xls"
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
         <input

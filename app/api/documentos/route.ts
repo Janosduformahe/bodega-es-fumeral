@@ -122,19 +122,34 @@ export async function POST(req: NextRequest) {
     const porId = new Map(vinos.map((v) => [v.id, v]));
 
     const buffer = Buffer.from(await file.arrayBuffer());
+    const nombreLower = file.name.toLowerCase();
+    const esHojaCalculo = /\.(csv|xlsx|xls)$/.test(nombreLower);
 
-    // Construir el contenido para la IA según el tipo de archivo
-    let parts: ContentPart[];
-    if (tipo === "excel") {
+    function aCsv(): string {
       let csv: string;
-      if (file.name.toLowerCase().endsWith(".csv")) {
+      if (nombreLower.endsWith(".csv")) {
         csv = buffer.toString("utf8");
       } else {
         const wb = XLSX.read(buffer, { type: "buffer" });
         csv = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
       }
       if (csv.length > 60000) csv = csv.slice(0, 60000) + "\n...(truncado)";
-      parts = [{ type: "text", text: promptExcel(csv, vinos) }];
+      return csv;
+    }
+
+    // Construir el contenido para la IA según el tipo de archivo
+    let parts: ContentPart[];
+    if (tipo === "excel") {
+      parts = [{ type: "text", text: promptExcel(aCsv(), vinos) }];
+    } else if (esHojaCalculo) {
+      // Albarán o cierre de caja exportado del TPV como CSV/Excel:
+      // texto exacto, sin OCR — máxima precisión
+      parts = [
+        {
+          type: "text",
+          text: `${promptAlbaranCierre(tipo, vinos)}\n\nCONTENIDO DEL DOCUMENTO (CSV exportado del TPV):\n${aCsv()}`,
+        },
+      ];
     } else {
       const b64 = buffer.toString("base64");
       const mime = file.type || "image/jpeg";
