@@ -267,12 +267,13 @@ export async function POST(req: NextRequest) {
     // hace falta mucho más espacio de salida que para un albarán.
     // El casado de cientos de filas contra el catálogo necesita un modelo
     // potente; los albaranes/cierres funcionan bien con el modelo rápido.
+    // OJO: se usan nombres de variable nuevos (OPENROUTER_MODEL_DOCS/_EXCEL)
+    // a propósito — la antigua OPENROUTER_MODEL quedó configurada en Vercel
+    // con un modelo obsoleto y se ignora deliberadamente.
     const modeloTarea =
       tipo === "excel"
-        ? process.env.OPENROUTER_MODEL_EXCEL ||
-          process.env.OPENROUTER_MODEL ||
-          "google/gemini-3.5-flash"
-        : process.env.OPENROUTER_MODEL || "google/gemini-3.5-flash";
+        ? process.env.OPENROUTER_MODEL_EXCEL || "google/gemini-3.5-flash"
+        : process.env.OPENROUTER_MODEL_DOCS || "google/gemini-3.5-flash";
     const { texto, modelo } = await llamarOpenRouter(
       parts,
       tipo === "excel" ? 60000 : 16000,
