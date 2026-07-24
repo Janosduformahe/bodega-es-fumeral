@@ -32,7 +32,7 @@ export default function Tabs() {
         </Link>
         <Link
           href="/ventas"
-          className={`tab${pathname === "/ventas" ? " active" : ""}`}
+          className={`tab${pathname === "/ventas" || pathname === "/compras" ? " active" : ""}`}
         >
           <span className="tab-ico">
             <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -40,7 +40,7 @@ export default function Tabs() {
               <path d="m19 9-5 5-4-4-3 3" />
             </svg>
           </span>
-          Ventas
+          Análisis
         </Link>
         <Link
           href="/documentos"

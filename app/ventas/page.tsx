@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Tabs from "@/components/Tabs";
 import { IconWine } from "@/components/icons";
+import { SubNav } from "@/components/analisis";
 import { createClient } from "@/lib/supabase/client";
 import type { Vino } from "@/lib/types";
 
@@ -222,10 +223,11 @@ export default function VentasPage() {
       <div className="page">
         <div className="page-header">
           <div>
-            <div className="page-title">Ventas</div>
+            <div className="page-title">Análisis</div>
             <div className="page-sub">Rotación, ingresos y margen por referencia</div>
           </div>
         </div>
+        <SubNav />
 
         {/* Una sola fila de filtros que afecta a todo el panel */}
         <div className="chips-row" role="group" aria-label="Periodo">
