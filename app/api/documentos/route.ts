@@ -1,4 +1,5 @@
-import { NextResponse, type NextRequest } from "next/server";
+﻿import { NextResponse, type NextRequest } from "next/server";
+import { jsonrepair } from "jsonrepair";
 import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/server";
 import { promptAlbaranCierre, promptExcel } from "@/lib/prompts";
@@ -13,13 +14,15 @@ type ContentPart =
   | { type: "image_url"; image_url: { url: string } }
   | { type: "file"; file: { filename: string; file_data: string } };
 
-async function llamarOpenRouter(parts: ContentPart[]): Promise<{ texto: string; modelo: string }> {
+async function llamarOpenRouter(
+  parts: ContentPart[],
+  maxTokens: number,
+  modelo: string
+): Promise<{ texto: string; modelo: string }> {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
     throw new Error("Falta OPENROUTER_API_KEY en las variables de entorno");
   }
-  // Necesita un modelo CON VISIÓN (lee fotos y PDFs de albaranes)
-  const modelo = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
 
   const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -31,7 +34,7 @@ async function llamarOpenRouter(parts: ContentPart[]): Promise<{ texto: string; 
     },
     body: JSON.stringify({
       model: modelo,
-      max_tokens: 4000,
+      max_tokens: maxTokens,
       messages: [{ role: "user", content: parts }],
     }),
   });
@@ -47,10 +50,45 @@ async function llamarOpenRouter(parts: ContentPart[]): Promise<{ texto: string; 
   return { texto, modelo: data.model || modelo };
 }
 
+const normalizar = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const tokens = (s: string) =>
+  new Set(normalizar(s).split(" ").filter((t) => t.length > 2));
+
+/** ¿La "referencia nueva" propuesta por la IA ya existe en el catálogo?
+ *  Protección determinista contra duplicados por variaciones de nombre. */
+function esDuplicado(
+  ref: { bodega: string; nombre: string; anio: number | null },
+  vinos: Vino[]
+): Vino | null {
+  const bRef = normalizar(ref.bodega);
+  const tRef = tokens(`${ref.bodega} ${ref.nombre}`);
+  for (const v of vinos) {
+    const bCat = normalizar(v.bodega);
+    if (!(bCat === bRef || bCat.includes(bRef) || bRef.includes(bCat))) continue;
+    const tCat = tokens(`${v.bodega} ${v.nombre}`);
+    let comunes = 0;
+    for (const t of tRef) if (tCat.has(t)) comunes++;
+    const solape = comunes / Math.max(1, Math.min(tRef.size, tCat.size));
+    if (solape >= 0.6 || (ref.anio !== null && ref.anio === v.anio && solape >= 0.4)) {
+      return v;
+    }
+  }
+  return null;
+}
+
 // Altas nuevas propuestas por la IA (Excel o albarán con vinos fuera de catálogo)
 function recogerNuevasReferencias(
   parsed: Record<string, unknown>,
-  resultado: ResultadoDocumento
+  resultado: ResultadoDocumento,
+  vinos: Vino[]
 ) {
   const nuevas = (parsed.nuevas_referencias ?? []) as Record<string, unknown>[];
   for (const n of nuevas) {
@@ -68,6 +106,13 @@ function recogerNuevasReferencias(
       stock: Math.max(0, Math.round(Number(n.stock) || 0)),
     };
     if (!ref.bodega || !ref.nombre) continue;
+    const dup = esDuplicado(ref, vinos);
+    if (dup) {
+      resultado.no_encontrados!.push({
+        texto: `"${ref.bodega} — ${ref.nombre}" parece ser "${dup.bodega} — ${dup.nombre}" (ya en catálogo) — no se crea`,
+      });
+      continue;
+    }
     resultado.nuevas_referencias!.push(ref);
     resultado.preview!.push({
       vino_id: -1,
@@ -87,10 +132,25 @@ function parseJsonIA(raw: string): Record<string, unknown> {
     .replace(/^```json?\s*/i, "")
     .replace(/```\s*$/, "")
     .trim();
+  const ini = limpio.indexOf("{");
+  const fin = limpio.lastIndexOf("}");
+  const candidato = ini !== -1 && fin > ini ? limpio.slice(ini, fin + 1) : limpio;
   try {
-    return JSON.parse(limpio);
+    return JSON.parse(candidato);
   } catch {
-    throw new Error("No se pudo interpretar la respuesta de la IA. Inténtalo de nuevo.");
+    // La IA a veces emite JSON con comillas sin escapar (nombres de vinos
+    // con comillas) o pequeños defectos — jsonrepair los corrige
+    try {
+      return JSON.parse(jsonrepair(candidato));
+    } catch {
+      console.error(
+        "[documentos] respuesta IA no parseable (primeros 2000 chars):",
+        limpio.slice(0, 2000)
+      );
+      throw new Error(
+        "La IA devolvió una respuesta incompleta o no válida. Vuelve a intentarlo; si persiste, prueba con un archivo más pequeño."
+      );
+    }
   }
 }
 
@@ -130,10 +190,15 @@ export async function POST(req: NextRequest) {
       if (nombreLower.endsWith(".csv")) {
         csv = buffer.toString("utf8");
       } else {
+        // Si hay varias hojas, elegir la de más contenido (los Excel reales
+        // suelen traer hojas viejas/copias al lado de la buena)
         const wb = XLSX.read(buffer, { type: "buffer" });
-        csv = XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]);
+        const csvs = wb.SheetNames.map((n) =>
+          XLSX.utils.sheet_to_csv(wb.Sheets[n])
+        );
+        csv = csvs.reduce((a, b) => (b.length > a.length ? b : a), "");
       }
-      if (csv.length > 60000) csv = csv.slice(0, 60000) + "\n...(truncado)";
+      if (csv.length > 200000) csv = csv.slice(0, 200000) + "\n...(truncado)";
       return csv;
     }
 
@@ -161,7 +226,19 @@ export async function POST(req: NextRequest) {
       parts = [filePart, { type: "text", text: promptAlbaranCierre(tipo, vinos) }];
     }
 
-    const { texto, modelo } = await llamarOpenRouter(parts);
+    // Un Excel completo puede requerir ~300 actualizaciones en la respuesta:
+    // hace falta mucho más espacio de salida que para un albarán.
+    // El casado de cientos de filas contra el catálogo necesita un modelo
+    // potente; los albaranes/cierres funcionan bien con el modelo rápido.
+    const modeloTarea =
+      tipo === "excel"
+        ? process.env.OPENROUTER_MODEL_EXCEL || "anthropic/claude-sonnet-4.5"
+        : process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
+    const { texto, modelo } = await llamarOpenRouter(
+      parts,
+      tipo === "excel" ? 32000 : 8000,
+      modeloTarea
+    );
     const parsed = parseJsonIA(texto);
 
     // Normalizar a la forma que consume la RPC aplicar_documento
@@ -212,7 +289,7 @@ export async function POST(req: NextRequest) {
           });
         }
       }
-      recogerNuevasReferencias(parsed, resultado);
+      recogerNuevasReferencias(parsed, resultado, vinos);
       const noId = (parsed.no_identificados ?? []) as { texto: string }[];
       resultado.no_encontrados = noId.map((x) => ({ texto: String(x.texto || "") }));
     } else {
@@ -248,7 +325,7 @@ export async function POST(req: NextRequest) {
       }
       // En albaranes, los vinos fuera de catálogo se dan de alta como referencia nueva
       if (esAlbaran) {
-        recogerNuevasReferencias(parsed, resultado);
+        recogerNuevasReferencias(parsed, resultado, vinos);
       }
       const noEnc = (parsed.no_encontrados ?? []) as { texto: string; qty?: number }[];
       resultado.no_encontrados = noEnc.map((x) => ({
