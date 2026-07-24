@@ -76,6 +76,8 @@ function esDuplicado(
   const bRef = normalizar(ref.bodega);
   const tRef = tokens(`${ref.bodega} ${ref.nombre}`);
   for (const v of vinos) {
+    // Añadas distintas = referencias distintas: nunca es duplicado
+    if (ref.anio !== null && v.anio !== null && ref.anio !== v.anio) continue;
     const bCat = normalizar(v.bodega);
     if (!(bCat === bRef || bCat.includes(bRef) || bRef.includes(bCat))) continue;
     const tCat = tokens(`${v.bodega} ${v.nombre}`);
@@ -178,6 +180,7 @@ Devuelve SOLO JSON compacto en una línea:
 
 REGLAS:
 - Una pareja SOLO si es claramente EL MISMO vino (variaciones ortográficas, abreviaturas, orden bodega/nombre invertido).
+- IMPORTANTE: cada añada es una referencia DISTINTA (el precio cambia con la cosecha). Solo empareja si la añada coincide o si una de las dos no está indicada. El mismo vino con otra añada NO se empareja: va a "nuevas" con su añada.
 - Cada fila y cada id pueden aparecer como mucho una vez.
 - Las filas que no casen con nada son "nuevas": deduce tipo (uno de Espumoso, Blanco, Rosado, Tinto, Dulce), pais y uva con tu conocimiento de vinos.
 - Omite filas que no sean vinos reales. Sin markdown ni texto extra.`;
@@ -265,11 +268,6 @@ REGLAS:
           .join(" · "),
         qty: String(fila.stock),
         direccion: delta >= 0 ? "plus" : "minus",
-      });
-    }
-    if (fila.anio !== null && vino.anio !== null && fila.anio !== vino.anio) {
-      resultado.no_encontrados!.push({
-        texto: `Añada distinta en "${vino.bodega} — ${vino.nombre}": catálogo ${vino.anio}, Excel ${fila.anio} (no se cambia sola)`,
       });
     }
   }

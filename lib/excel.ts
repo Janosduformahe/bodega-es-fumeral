@@ -140,9 +140,11 @@ function puntuar(f: FilaExcel, v: Vino): number {
   const esMagF = /magnum/i.test(textoFila(f));
   const esMagV = /magnum/i.test(textoVino(v));
   if (esMagF !== esMagV) score -= 0.5;
+  // Cada añada es una referencia distinta (el precio cambia con la cosecha):
+  // si ambas están indicadas y difieren, NUNCA emparejar
   if (f.anio !== null && v.anio !== null) {
-    if (f.anio === v.anio) score += 0.15;
-    else score -= 0.1;
+    if (f.anio !== v.anio) return 0;
+    score += 0.15;
   }
   return score;
 }
