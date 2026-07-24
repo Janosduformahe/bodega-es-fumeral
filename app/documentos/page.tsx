@@ -283,18 +283,27 @@ export default function DocumentosPage() {
                   <div className={`dr-qty ${p.direccion}`}>{p.qty}</div>
                 </div>
               ))}
-              {(r.no_encontrados ?? []).map((x, i) => (
-                <div className="dr-item dr-no-match" key={`ne-${i}`}>
-                  <div className="dr-wine">
-                    <div className="dr-wine-name">⚠ No identificado</div>
-                    <div className="dr-wine-match">
-                      &quot;{x.texto}&quot;
-                      {x.qty ? ` · ${x.qty} bot.` : ""}
+              {(r.no_encontrados ?? []).map((x, i) => {
+                // Distinguir avisos informativos (no crean ni cambian nada)
+                // de líneas de documento realmente no identificadas
+                const esAviso = /^(Añada distinta|\d+ vinos de la bodega|")/.test(
+                  x.texto
+                );
+                return (
+                  <div className="dr-item dr-no-match" key={`ne-${i}`}>
+                    <div className="dr-wine">
+                      <div className="dr-wine-name">
+                        {esAviso ? "ℹ Aviso — sin cambios" : "⚠ No identificado"}
+                      </div>
+                      <div className="dr-wine-match">
+                        {x.texto}
+                        {x.qty ? ` · ${x.qty} bot.` : ""}
+                      </div>
                     </div>
+                    <div className="dr-qty">{esAviso ? "—" : "?"}</div>
                   </div>
-                  <div className="dr-qty">?</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="dr-actions">
               <button className="btn-discard" onClick={descartar}>
