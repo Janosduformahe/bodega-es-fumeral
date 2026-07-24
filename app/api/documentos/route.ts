@@ -202,10 +202,27 @@ export async function POST(req: NextRequest) {
       return csv;
     }
 
+    // La columna de stock vigente se determina en código (fecha más reciente
+    // de la cabecera, formato dd/mm/aa) — no se deja a criterio de la IA
+    function ultimaColumnaFecha(csv: string): string | null {
+      const cabecera = csv.split("\n", 1)[0] ?? "";
+      let mejor: { txt: string; val: number } | null = null;
+      for (const m of cabecera.matchAll(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/g)) {
+        const dia = Number(m[1]);
+        const mes = Number(m[2]);
+        let anio = Number(m[3]);
+        if (anio < 100) anio += 2000;
+        const val = anio * 10000 + mes * 100 + dia;
+        if (!mejor || val > mejor.val) mejor = { txt: m[0], val };
+      }
+      return mejor?.txt ?? null;
+    }
+
     // Construir el contenido para la IA según el tipo de archivo
     let parts: ContentPart[];
     if (tipo === "excel") {
-      parts = [{ type: "text", text: promptExcel(aCsv(), vinos) }];
+      const csv = aCsv();
+      parts = [{ type: "text", text: promptExcel(csv, vinos, ultimaColumnaFecha(csv)) }];
     } else if (esHojaCalculo) {
       // Albarán o cierre de caja exportado del TPV como CSV/Excel:
       // texto exacto, sin OCR — máxima precisión
