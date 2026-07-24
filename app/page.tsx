@@ -118,6 +118,7 @@ export default function InventarioPage() {
   const [filtTipo, setFiltTipo] = useState("");
   const [filtPais, setFiltPais] = useState("");
   const [filtStock, setFiltStock] = useState("");
+  const [filtCarta, setFiltCarta] = useState<"" | "en" | "fuera">("");
   const [sortBy, setSortBy] = useState("bodega");
   const [sheet, setSheet] = useState<null | "filtros">(null);
 
@@ -274,6 +275,8 @@ export default function InventarioPage() {
       if (filtStock === "ok" && w.stock === 0) return false;
       if (filtStock === "low" && (w.stock === 0 || w.stock > thresh)) return false;
       if (filtStock === "zero" && w.stock !== 0) return false;
+      if (filtCarta === "en" && !w.en_carta) return false;
+      if (filtCarta === "fuera" && w.en_carta) return false;
       if (
         ql &&
         !(
@@ -294,9 +297,11 @@ export default function InventarioPage() {
       return a.bodega.localeCompare(b.bodega);
     });
     return filtered;
-  }, [wines, q, filtTipo, filtPais, filtStock, sortBy, thresh]);
+  }, [wines, q, filtTipo, filtPais, filtStock, filtCarta, sortBy, thresh]);
 
   // Secciones por tipo (estilo carta) cuando no hay tipo elegido y el orden lo permite
+  const enCartaCount = wines.filter((w) => w.en_carta).length;
+
   const sections = useMemo(() => {
     if (filtTipo || sortBy !== "bodega") return null;
     const out: { tipo: TipoVino; wines: Vino[] }[] = [];
@@ -342,6 +347,11 @@ export default function InventarioPage() {
         </div>
         <div className="wc-bottom">
           <div className="wc-badges">
+            {w.en_carta && (
+              <span className="badge b-carta" title="Figura en la carta de vinos">
+                En carta
+              </span>
+            )}
             {w.precio > 0 && <span className="badge b-price">{w.precio} €</span>}
             {(w.precio_compra ?? 0) > 0 && (
               <span
@@ -542,6 +552,24 @@ export default function InventarioPage() {
               {t}
             </button>
           ))}
+          {enCartaCount > 0 && (
+            <>
+              <button
+                className={`chip${filtCarta === "en" ? " on" : ""}`}
+                style={{ "--dotc": "var(--blue)" } as React.CSSProperties}
+                onClick={() => setFiltCarta(filtCarta === "en" ? "" : "en")}
+              >
+                En carta
+              </button>
+              <button
+                className={`chip${filtCarta === "fuera" ? " on" : ""}`}
+                style={{ "--dotc": "var(--muted2)" } as React.CSSProperties}
+                onClick={() => setFiltCarta(filtCarta === "fuera" ? "" : "fuera")}
+              >
+                Fuera de carta
+              </button>
+            </>
+          )}
           <button
             className={`chip${filtPais || sortBy !== "bodega" ? " on" : ""}`}
             style={{ "--dotc": "var(--brand)" } as React.CSSProperties}

@@ -3,7 +3,7 @@ import { jsonrepair } from "jsonrepair";
 import * as XLSX from "xlsx";
 import { emparejar, parsearInventario, type FilaExcel } from "@/lib/excel";
 import { createClient } from "@/lib/supabase/server";
-import { promptAlbaranCierre, promptExcel } from "@/lib/prompts";
+import { promptAlbaranCierre, promptCarta, promptExcel } from "@/lib/prompts";
 import type { ResultadoDocumento, TipoVino, Vino } from "@/lib/types";
 
 export const maxDuration = 120; // la lectura IA de un PDF puede tardar
@@ -381,8 +381,8 @@ export async function POST(req: NextRequest) {
   try {
     const form = await req.formData();
     const file = form.get("file") as File | null;
-    const tipo = form.get("tipo") as "albaran" | "cierre" | "excel" | null;
-    if (!file || !tipo || !["albaran", "cierre", "excel"].includes(tipo)) {
+    const tipo = form.get("tipo") as "albaran" | "cierre" | "excel" | "carta" | null;
+    if (!file || !tipo || !["albaran", "cierre", "excel", "carta"].includes(tipo)) {
       return NextResponse.json({ error: "Petición inválida" }, { status: 400 });
     }
 
@@ -458,7 +458,24 @@ export async function POST(req: NextRequest) {
     if (!resultadoFinal) {
     // Construir el contenido para la IA según el tipo de archivo
     let parts: ContentPart[];
-    if (tipo === "excel") {
+    if (tipo === "carta") {
+      const promptTxt = promptCarta(vinos);
+      if (esHojaCalculo) {
+        parts = [
+          { type: "text", text: `${promptTxt}\n\nCONTENIDO DE LA CARTA:\n${aCsv()}` },
+        ];
+      } else {
+        const b64 = buffer.toString("base64");
+        const mime = file.type || "image/jpeg";
+        const dataUrl = `data:${mime};base64,${b64}`;
+        parts = [
+          mime === "application/pdf"
+            ? { type: "file", file: { filename: file.name, file_data: dataUrl } }
+            : { type: "image_url", image_url: { url: dataUrl } },
+          { type: "text", text: promptTxt },
+        ];
+      }
+    } else if (tipo === "excel") {
       const csv = aCsv();
       parts = [{ type: "text", text: promptExcel(csv, vinos, ultimaColumnaFecha(csv)) }];
     } else if (esHojaCalculo) {
@@ -494,7 +511,7 @@ export async function POST(req: NextRequest) {
         : process.env.OPENROUTER_MODEL_DOCS || "google/gemini-3.5-flash";
     const { texto, modelo } = await llamarOpenRouter(
       parts,
-      tipo === "excel" ? 60000 : 16000,
+      tipo === "excel" || tipo === "carta" ? 60000 : 16000,
       modeloTarea
     );
     const parsed = parseJsonIA(texto);
@@ -508,7 +525,61 @@ export async function POST(req: NextRequest) {
       preview: [],
     };
 
-    if (tipo === "excel") {
+    if (tipo === "carta") {
+      const items = (parsed.items ?? []) as {
+        id: number;
+        precio?: number;
+        texto_original?: string;
+        confianza?: string;
+      }[];
+      const enCarta = new Set<number>();
+      for (const item of items) {
+        const w = porId.get(Number(item.id));
+        if (!w || enCarta.has(w.id)) continue;
+        enCarta.add(w.id);
+        const pv = Math.round(Number(item.precio) || 0);
+        if (pv > 0 && pv !== Math.round(Number(w.precio))) {
+          resultado.precios!.push({ vino_id: w.id, precio_nuevo: pv });
+        }
+        // Solo se previsualizan los cambios: entra en carta o cambia de precio
+        if (!w.en_carta || (pv > 0 && pv !== Math.round(Number(w.precio)))) {
+          resultado.preview!.push({
+            vino_id: w.id,
+            etiqueta: `${item.confianza === "baja" ? "⚠ " : ""}${w.bodega} — ${w.nombre}${w.anio ? ` (${w.anio})` : ""}`,
+            detalle: [
+              !w.en_carta ? "Entra en carta" : "Ya estaba en carta",
+              pv > 0 && pv !== Math.round(Number(w.precio))
+                ? `Precio: ${w.precio}€ → ${pv}€`
+                : "",
+              item.confianza === "baja" ? "confianza baja" : "",
+            ]
+              .filter(Boolean)
+              .join(" · "),
+            qty: pv > 0 ? `${pv} €` : "carta",
+            direccion: "plus",
+            confianza: item.confianza,
+          });
+        }
+      }
+      resultado.carta_ids = [...enCarta];
+      // Vinos que estaban en carta y esta ya no incluye
+      for (const w of vinos) {
+        if (w.en_carta && !enCarta.has(w.id)) {
+          resultado.preview!.push({
+            vino_id: w.id,
+            etiqueta: `${w.bodega} — ${w.nombre}${w.anio ? ` (${w.anio})` : ""}`,
+            detalle: `Sale de carta${w.stock > 0 ? ` · quedan ${w.stock} bot. en bodega` : ""}`,
+            qty: "fuera",
+            direccion: "minus",
+          });
+        }
+      }
+      const noEncCarta = (parsed.no_encontrados ?? []) as { texto: string }[];
+      resultado.no_encontrados = noEncCarta.map((x) => ({
+        texto: `${String(x.texto || "")} — en la carta pero no en el inventario`,
+      }));
+      resultado.proveedor_o_fecha = `Carta de vinos · ${enCarta.size} referencias`;
+    } else if (tipo === "excel") {
       const actualizaciones = (parsed.actualizaciones ?? []) as {
         id: number;
         stock_nuevo: number;

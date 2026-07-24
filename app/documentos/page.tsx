@@ -8,6 +8,7 @@ import {
   IconReceipt,
   IconTable,
   IconTrash,
+  IconWine,
 } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -21,6 +22,7 @@ const TIPO_LABEL: Record<TipoDocumento, string> = {
   albaran: "Albarán",
   cierre: "Cierre caja",
   excel: "Excel",
+  carta: "Carta",
 };
 
 export default function DocumentosPage() {
@@ -130,11 +132,21 @@ export default function DocumentosPage() {
       setError("Error al aplicar: " + error.message);
       return;
     }
-    const res = data as { movimientos_aplicados: number; referencias_nuevas: number };
+    const res = data as {
+      movimientos_aplicados: number;
+      referencias_nuevas: number;
+      precios_actualizados: number;
+      en_carta: number;
+      fuera_de_carta: number;
+    };
     alert(
-      `✓ Aplicado: ${res.movimientos_aplicados} movimientos${
-        res.referencias_nuevas ? `, ${res.referencias_nuevas} referencias nuevas` : ""
-      }.`
+      docType === "carta"
+        ? `✓ Carta aplicada: ${res.en_carta} referencias en carta, ${res.fuera_de_carta} fuera${
+            res.precios_actualizados ? `, ${res.precios_actualizados} precios actualizados` : ""
+          }.`
+        : `✓ Aplicado: ${res.movimientos_aplicados} movimientos${
+            res.referencias_nuevas ? `, ${res.referencias_nuevas} referencias nuevas` : ""
+          }${res.precios_actualizados ? `, ${res.precios_actualizados} precios` : ""}.`
     );
     setPending(null);
     loadHistory();
@@ -179,7 +191,7 @@ export default function DocumentosPage() {
         </div>
 
         <div className="section-label">Tipo de documento</div>
-        <div className="doc-type-row" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
+        <div className="doc-type-row" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
           <button
             className={`doc-type-btn${docType === "albaran" ? " selected" : ""}`}
             onClick={() => setDocType("albaran")}
@@ -210,6 +222,16 @@ export default function DocumentosPage() {
             <span className="dt-label">Excel</span>
             <span className="dt-sub">Actualizar todo</span>
           </button>
+          <button
+            className={`doc-type-btn${docType === "carta" ? " selected" : ""}`}
+            onClick={() => setDocType("carta")}
+          >
+            <span className="dt-icon">
+              <IconWine size={22} />
+            </span>
+            <span className="dt-label">Carta</span>
+            <span className="dt-sub">Qué está en carta</span>
+          </button>
         </div>
 
         <div
@@ -225,6 +247,8 @@ export default function DocumentosPage() {
           <span className="doc-zone-icon">
             {docType === "excel" ? (
               <IconTable size={30} strokeWidth={1.5} />
+            ) : docType === "carta" ? (
+              <IconWine size={30} strokeWidth={1.5} />
             ) : (
               <IconFileUp size={30} strokeWidth={1.5} />
             )}
@@ -232,16 +256,20 @@ export default function DocumentosPage() {
           <div className="doc-zone-title">
             {docType === "excel"
               ? "Suelta aquí tu Excel actualizado…"
-              : docType === "albaran"
-                ? "Suelta aquí el albarán…"
-                : "Suelta aquí el cierre de caja…"}
+              : docType === "carta"
+                ? "Suelta aquí la carta de vinos…"
+                : docType === "albaran"
+                  ? "Suelta aquí el albarán…"
+                  : "Suelta aquí el cierre de caja…"}
           </div>
           <div className="doc-zone-sub">
             {docType === "excel"
               ? "Archivos .xlsx, .xls o .csv — actualiza stock, precios y referencias nuevas"
-              : docType === "cierre"
-                ? "CSV/Excel exportado del TPV (máxima precisión), PDF o foto"
-                : "PDF, imagen (JPG, PNG) o CSV/Excel del proveedor"}
+              : docType === "carta"
+                ? "PDF, foto o Excel — marca qué botellas están en carta y actualiza sus precios"
+                : docType === "cierre"
+                  ? "CSV/Excel exportado del TPV (máxima precisión), PDF o foto"
+                  : "PDF, imagen (JPG, PNG) o CSV/Excel del proveedor"}
           </div>
         </div>
         <input

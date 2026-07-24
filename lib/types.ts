@@ -1,6 +1,6 @@
 export type TipoVino = "Espumoso" | "Blanco" | "Rosado" | "Tinto" | "Dulce";
 export type TipoMovimiento = "venta" | "entrada" | "excel" | "ajuste";
-export type TipoDocumento = "albaran" | "cierre" | "excel";
+export type TipoDocumento = "albaran" | "cierre" | "excel" | "carta";
 
 export type Vino = {
   id: number;
@@ -15,6 +15,8 @@ export type Vino = {
   proveedor: string | null;
   stock: number;
   activo: boolean;
+  en_carta: boolean;
+  carta_actualizada: string | null;
 };
 
 export type Movimiento = {
@@ -50,6 +52,8 @@ export type ResultadoDocumento = {
     precio_compra_nuevo?: number;
     proveedor_nuevo?: string;
   }[];
+  /** Documentos de tipo carta: ids que quedan EN carta (el resto, fuera) */
+  carta_ids?: number[];
   /** Referencias que el inventario sugiere retirar del catálogo */
   bajas_sugeridas?: {
     vino_id: number;
