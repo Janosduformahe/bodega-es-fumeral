@@ -11,6 +11,7 @@ export type Vino = {
   pais: string;
   uva: string | null;
   precio: number;
+  precio_compra: number | null;
   stock: number;
   activo: boolean;
 };
@@ -41,7 +42,11 @@ export type DocumentoRow = {
 export type ResultadoDocumento = {
   proveedor_o_fecha?: string;
   movimientos: { vino_id: number; qty: number; nota?: string }[];
-  precios?: { vino_id: number; precio_nuevo: number }[];
+  precios?: {
+    vino_id: number;
+    precio_nuevo?: number;
+    precio_compra_nuevo?: number;
+  }[];
   nuevas_referencias?: {
     anio: number | null;
     bodega: string;
@@ -50,6 +55,7 @@ export type ResultadoDocumento = {
     pais: string;
     uva: string | null;
     precio: number;
+    precio_compra?: number | null;
     stock: number;
   }[];
   no_encontrados?: { texto: string; qty?: number }[];

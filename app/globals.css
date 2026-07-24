@@ -138,6 +138,7 @@ input[type=search]::placeholder{color:var(--hint);font-weight:400}
 .wc-badges{display:flex;gap:5px;flex-wrap:wrap;flex:1;min-width:0;align-items:center}
 .badge{font-size:13px;font-weight:700;padding:4px 11px;border-radius:99px;white-space:nowrap;display:inline-block;background:var(--sand-act);color:var(--text)}
 .b-price{background:var(--bg);border:1.5px solid var(--border);color:var(--ink);font-variant-numeric:tabular-nums}
+.b-coste{background:transparent;border:1.5px dashed var(--border2);color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
 .wc-actions{display:flex;gap:8px;flex-shrink:0;align-items:center}
 .btn-v,.btn-e{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--border);background:var(--sand-act);font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:background-color .15s,transform .1s}
 .btn-v{color:var(--red)}

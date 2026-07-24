@@ -320,6 +320,18 @@ export default function InventarioPage() {
         <div className="wc-bottom">
           <div className="wc-badges">
             {w.precio > 0 && <span className="badge b-price">{w.precio} €</span>}
+            {(w.precio_compra ?? 0) > 0 && (
+              <span
+                className="badge b-coste"
+                title="Precio de compra (proveedor)"
+              >
+                coste{" "}
+                {Number(w.precio_compra).toLocaleString("es-ES", {
+                  maximumFractionDigits: 2,
+                })}{" "}
+                €
+              </span>
+            )}
           </div>
           <div className="wc-actions">
             <button

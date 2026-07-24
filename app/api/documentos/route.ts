@@ -126,7 +126,10 @@ function recogerNuevasReferencias(
       ref.precio = Math.max(5, Math.round((precioCompra * multiplicadorPrecio) / 5) * 5);
       notaPrecio = ` · PVP ${ref.precio}€ (coste ${precioCompra}€ × ${multiplicadorPrecio})`;
     }
-    resultado.nuevas_referencias!.push(ref);
+    resultado.nuevas_referencias!.push({
+      ...ref,
+      precio_compra: precioCompra > 0 ? precioCompra : null,
+    });
     resultado.preview!.push({
       vino_id: -1,
       etiqueta: `${ref.bodega} — ${ref.nombre}${ref.anio ? ` (${ref.anio})` : ""}`,
@@ -230,6 +233,9 @@ REGLAS:
     const delta = fila.stock - vino.stock;
     const pv = Math.round(fila.precioVenta ?? 0);
     const cambiaPrecio = pv > 0 && pv !== Math.round(Number(vino.precio));
+    const pc = Math.round((fila.precioCompra ?? 0) * 100) / 100;
+    const cambiaCompra =
+      pc > 0 && pc !== Math.round(Number(vino.precio_compra ?? 0) * 100) / 100;
     if (delta !== 0) {
       resultado.movimientos.push({
         vino_id: vino.id,
@@ -237,16 +243,23 @@ REGLAS:
         nota: `Excel ${inv.etiquetaFecha}: ${vino.stock} → ${fila.stock}`,
       });
     }
-    if (cambiaPrecio) {
-      resultado.precios!.push({ vino_id: vino.id, precio_nuevo: pv });
+    if (cambiaPrecio || cambiaCompra) {
+      resultado.precios!.push({
+        vino_id: vino.id,
+        ...(cambiaPrecio ? { precio_nuevo: pv } : {}),
+        ...(cambiaCompra ? { precio_compra_nuevo: pc } : {}),
+      });
     }
-    if (delta !== 0 || cambiaPrecio) {
+    if (delta !== 0 || cambiaPrecio || cambiaCompra) {
       resultado.preview!.push({
         vino_id: vino.id,
         etiqueta: `${vino.bodega} — ${vino.nombre}${vino.anio ? ` (${vino.anio})` : ""}`,
         detalle: [
           delta !== 0 ? `Stock: ${vino.stock} → ${fila.stock}` : "",
-          cambiaPrecio ? `Precio: ${vino.precio}€ → ${pv}€` : "",
+          cambiaPrecio ? `Venta: ${vino.precio}€ → ${pv}€` : "",
+          cambiaCompra
+            ? `Coste: ${vino.precio_compra ? `${vino.precio_compra}€` : "—"} → ${pc}€`
+            : "",
         ]
           .filter(Boolean)
           .join(" · "),
@@ -285,6 +298,7 @@ REGLAS:
       pais: clasif.pais?.trim() || "España",
       uva: clasif.uva?.trim() || null,
       precio,
+      precio_compra: f.precioCompra ?? null,
       stock: f.stock,
     });
     resultado.preview!.push({
