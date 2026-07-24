@@ -71,8 +71,20 @@ export default function DocumentosPage() {
       form.append("file", file);
       form.append("tipo", docType);
       const resp = await fetch("/api/documentos", { method: "POST", body: form });
-      const data = await resp.json();
+      // Vercel puede devolver texto plano (p. ej. timeout) en vez de JSON
+      const texto = await resp.text();
+      let data: { documento_id?: number; resultado?: ResultadoDocumento; error?: string };
+      try {
+        data = JSON.parse(texto);
+      } catch {
+        throw new Error(
+          resp.status === 504 || /timeout|timed out/i.test(texto)
+            ? "El servidor tardó demasiado. Vuelve a intentarlo."
+            : `Error del servidor (${resp.status}): ${texto.slice(0, 120)}`
+        );
+      }
       if (!resp.ok) throw new Error(data.error || `Error ${resp.status}`);
+      if (!data.documento_id || !data.resultado) throw new Error("Respuesta inválida del servidor");
       addLog("✓ Documento leído. Revisa la previsualización.");
       setPending({
         documento_id: data.documento_id,

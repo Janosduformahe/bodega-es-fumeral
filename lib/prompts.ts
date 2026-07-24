@@ -24,7 +24,7 @@ Tu tarea:
     tipo === "albaran"
       ? `
   "nuevas_referencias": [
-    {"anio": 2019, "bodega": "Nombre de la bodega/productor", "nombre": "Nombre del vino", "tipo": "Tinto", "pais": "Francia", "uva": "Cabernet Sauvignon", "precio": 0, "stock": 2, "texto_original": "texto tal como aparece en el doc"}
+    {"anio": 2019, "bodega": "Nombre de la bodega/productor", "nombre": "Nombre del vino", "tipo": "Tinto", "pais": "Francia", "uva": "Cabernet Sauvignon", "precio": 0, "precio_compra": 24.5, "stock": 2, "texto_original": "texto tal como aparece en el doc"}
   ],`
       : ""
   }
@@ -41,7 +41,7 @@ INSTRUCCIONES:
 - Usa coincidencia aproximada de nombres (puede haber variaciones ortográficas, abreviaciones).
 ${
   tipo === "albaran"
-    ? `- Si un vino del albarán NO existe en el catálogo pero puedes identificarlo con claridad (bodega + nombre legibles), ponlo en "nuevas_referencias" como alta nueva: separa bodega/productor y nombre del vino, deduce "tipo" (uno de: Espumoso, Blanco, Rosado, Tinto, Dulce), "pais" y "uva" usando tu conocimiento de vinos; "anio" es número o null; "stock" = botellas recibidas. "precio" = 0 (el albarán trae precio de coste, no PVP — el precio de venta lo pondrá el equipo).
+    ? `- Si un vino del albarán NO existe en el catálogo pero puedes identificarlo con claridad (bodega + nombre legibles), ponlo en "nuevas_referencias" como alta nueva: separa bodega/productor y nombre del vino, deduce "tipo" (uno de: Espumoso, Blanco, Rosado, Tinto, Dulce), "pais" y "uva" usando tu conocimiento de vinos; "anio" es número o null; "stock" = botellas recibidas. "precio" = 0 y "precio_compra" = el precio unitario de coste que figure en el albarán (sin IVA si está desglosado; null si no se ve).
 - Usa "no_encontrados" solo para líneas ilegibles o que no puedas identificar con confianza.`
     : `- Si no estás seguro del ID, usa confianza "baja" o ponlo en no_encontrados.`
 }
@@ -67,7 +67,7 @@ Tu tarea: comparar cada fila del Excel con el catálogo actual de la bodega y de
     {"id": 5, "stock_nuevo": 12, "precio_nuevo": 130}
   ],
   "nuevas_referencias": [
-    {"anio": 2023, "bodega": "Nombre bodega", "nombre": "Nombre vino", "tipo": "Tinto", "pais": "España", "uva": "Tempranillo", "precio": 85, "stock": 6}
+    {"anio": 2023, "bodega": "Nombre bodega", "nombre": "Nombre vino", "tipo": "Tinto", "pais": "España", "uva": "Tempranillo", "precio": 85, "precio_compra": 24.5, "stock": 6}
   ],
   "no_identificados": [
     {"texto": "descripción del vino que no se pudo identificar"}
@@ -83,7 +83,7 @@ ${
     : `- El stock a usar es el de la ÚLTIMA columna de fecha (la más reciente del Excel).`
 }
 - Para "precio_nuevo": usa la columna "Precio Venta" si está disponible; si el precio no cambia, omite el campo.
-- Para "nuevas_referencias": incluye solo vinos que NO existan en el catálogo actual. "anio" es un número o null.
+- Para "nuevas_referencias": incluye solo vinos que NO existan en el catálogo actual. "anio" es un número o null. "precio" = columna "Precio Venta" si existe (0 si no); "precio_compra" = columna "Compra" si existe (null si no).
 - Ignora filas de agrupación/sección del Excel (nombres de país o tipo sueltos con contadores) — no son vinos.
 - "tipo" debe ser uno de: Espumoso, Blanco, Rosado, Tinto, Dulce.
 - Devuelve SOLO el JSON válido, COMPACTO EN UNA SOLA LÍNEA (sin saltos de línea ni espacios de indentación), sin texto extra.

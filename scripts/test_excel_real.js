@@ -44,7 +44,7 @@ Tu tarea: comparar cada fila del Excel con el catálogo actual de la bodega y de
 REGLAS:
 - El catálogo de abajo ya incluye el stock y el precio ACTUALES de cada vino. En "actualizaciones" incluye SOLO los vinos cuyo stock o precio CAMBIAN respecto al catálogo — omite por completo los que quedan igual.
 - Para "actualizaciones": busca coincidencia aproximada entre filas del Excel y el catálogo (puede haber variaciones ortográficas). Usa el ID del catálogo.
-- El stock a usar es el de la ÚLTIMA columna de fecha (la más reciente del Excel).
+- IMPORTANTE: el stock actual es el de la columna "01/06/26" EXACTAMENTE (es la columna de fecha más reciente del archivo). IGNORA cualquier otra columna de fecha y la columna "INVENTARIO FINAL".
 - Para "precio_nuevo": usa la columna "Precio Venta" si está disponible; si el precio no cambia, omite el campo.
 - Para "nuevas_referencias": incluye solo vinos que NO existan en el catálogo actual. "anio" es un número o null.
 - Ignora filas de agrupación/sección del Excel (nombres de país o tipo sueltos con contadores) — no son vinos.
@@ -92,7 +92,8 @@ ${csv}`;
     },
     body: JSON.stringify({
       model: process.env.OPENROUTER_MODEL_OVERRIDE || env.OPENROUTER_MODEL || "google/gemini-2.5-flash",
-      max_tokens: 32000,
+      max_tokens: 60000,
+      reasoning: { effort: "low" },
       messages: [{ role: "user", content: [{ type: "text", text: promptExcel(csv, vinos) }] }],
     }),
   });

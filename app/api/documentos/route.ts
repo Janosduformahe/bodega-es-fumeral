@@ -35,6 +35,10 @@ async function llamarOpenRouter(
     body: JSON.stringify({
       model: modelo,
       max_tokens: maxTokens,
+      // Los modelos razonadores (Gemini 3.x) gastan salida "pensando":
+      // esfuerzo bajo = rápido y suficiente para esta tarea.
+      // Los modelos sin razonamiento ignoran este parámetro.
+      reasoning: { effort: "low" },
       messages: [{ role: "user", content: parts }],
     }),
   });
@@ -88,7 +92,8 @@ function esDuplicado(
 function recogerNuevasReferencias(
   parsed: Record<string, unknown>,
   resultado: ResultadoDocumento,
-  vinos: Vino[]
+  vinos: Vino[],
+  multiplicadorPrecio: number
 ) {
   const nuevas = (parsed.nuevas_referencias ?? []) as Record<string, unknown>[];
   for (const n of nuevas) {
@@ -113,12 +118,19 @@ function recogerNuevasReferencias(
       });
       continue;
     }
+    // PVP automático: coste del albarán × multiplicador, redondeado a 5 €
+    const precioCompra = Number(n.precio_compra) || 0;
+    let notaPrecio = "";
+    if (ref.precio <= 0 && precioCompra > 0 && multiplicadorPrecio > 0) {
+      ref.precio = Math.max(5, Math.round((precioCompra * multiplicadorPrecio) / 5) * 5);
+      notaPrecio = ` · PVP ${ref.precio}€ (coste ${precioCompra}€ × ${multiplicadorPrecio})`;
+    }
     resultado.nuevas_referencias!.push(ref);
     resultado.preview!.push({
       vino_id: -1,
       etiqueta: `${ref.bodega} — ${ref.nombre}${ref.anio ? ` (${ref.anio})` : ""}`,
       detalle: `Referencia nueva · ${ref.tipo} · ${ref.pais}${ref.uva ? ` · ${ref.uva}` : ""}${
-        ref.precio > 0 ? ` · ${ref.precio}€` : " · precio pendiente"
+        notaPrecio || (ref.precio > 0 ? ` · ${ref.precio}€` : " · precio pendiente")
       }`,
       qty: `+${ref.stock}`,
       direccion: "plus",
@@ -180,6 +192,14 @@ export async function POST(req: NextRequest) {
     if (vinosError) throw new Error(vinosError.message);
     const vinos = (vinosData ?? []) as Vino[];
     const porId = new Map(vinos.map((v) => [v.id, v]));
+
+    // Multiplicador de PVP configurable por el equipo (coste × M)
+    const { data: ajusteMult } = await supabase
+      .from("ajustes")
+      .select("valor")
+      .eq("clave", "multiplicador_precio")
+      .maybeSingle();
+    const multiplicadorPrecio = Number(ajusteMult?.valor) || 1.8;
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const nombreLower = file.name.toLowerCase();
@@ -249,11 +269,13 @@ export async function POST(req: NextRequest) {
     // potente; los albaranes/cierres funcionan bien con el modelo rápido.
     const modeloTarea =
       tipo === "excel"
-        ? process.env.OPENROUTER_MODEL_EXCEL || "anthropic/claude-sonnet-4.5"
-        : process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
+        ? process.env.OPENROUTER_MODEL_EXCEL ||
+          process.env.OPENROUTER_MODEL ||
+          "google/gemini-3.5-flash"
+        : process.env.OPENROUTER_MODEL || "google/gemini-3.5-flash";
     const { texto, modelo } = await llamarOpenRouter(
       parts,
-      tipo === "excel" ? 32000 : 8000,
+      tipo === "excel" ? 60000 : 16000,
       modeloTarea
     );
     const parsed = parseJsonIA(texto);
@@ -306,7 +328,7 @@ export async function POST(req: NextRequest) {
           });
         }
       }
-      recogerNuevasReferencias(parsed, resultado, vinos);
+      recogerNuevasReferencias(parsed, resultado, vinos, multiplicadorPrecio);
       const noId = (parsed.no_identificados ?? []) as { texto: string }[];
       resultado.no_encontrados = noId.map((x) => ({ texto: String(x.texto || "") }));
     } else {
@@ -342,7 +364,7 @@ export async function POST(req: NextRequest) {
       }
       // En albaranes, los vinos fuera de catálogo se dan de alta como referencia nueva
       if (esAlbaran) {
-        recogerNuevasReferencias(parsed, resultado, vinos);
+        recogerNuevasReferencias(parsed, resultado, vinos, multiplicadorPrecio);
       }
       const noEnc = (parsed.no_encontrados ?? []) as { texto: string; qty?: number }[];
       resultado.no_encontrados = noEnc.map((x) => ({

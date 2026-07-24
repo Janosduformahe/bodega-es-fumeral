@@ -108,6 +108,7 @@ export default function InventarioPage() {
   const [wines, setWines] = useState<Vino[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [thresh, setThresh] = useState(1);
+  const [mult, setMult] = useState(1.8);
   const [showSettings, setShowSettings] = useState(false);
   const [dismissed, setDismissed] = useState<Record<string, number>>({});
   const [alertsOpen, setAlertsOpen] = useState(false);
@@ -146,6 +147,7 @@ export default function InventarioPage() {
       .then(({ data }) => {
         for (const a of data ?? []) {
           if (a.clave === "umbral_stock_bajo") setThresh(Number(a.valor));
+          if (a.clave === "multiplicador_precio") setMult(Number(a.valor) || 1.8);
           if (a.clave === "alertas_descartadas")
             setDismissed((a.valor as Record<string, number>) ?? {});
         }
@@ -181,6 +183,16 @@ export default function InventarioPage() {
   async function updateThresh(v: number) {
     setThresh(v);
     await supabase.from("ajustes").update({ valor: v }).eq("clave", "umbral_stock_bajo");
+  }
+
+  async function updateMult(v: number) {
+    setMult(v);
+    if (v >= 1 && v <= 5) {
+      await supabase
+        .from("ajustes")
+        .update({ valor: v })
+        .eq("clave", "multiplicador_precio");
+    }
   }
 
   async function dismissAlert(vino: Vino) {
@@ -435,6 +447,30 @@ export default function InventarioPage() {
             <div className="settings-note">
               Las alertas descartadas vuelven si el stock cambia. Compartido por todo el
               equipo.
+            </div>
+            <div className="settings-title" style={{ marginTop: 16 }}>
+              Precio de venta automático
+            </div>
+            <div className="settings-row">
+              <span className="settings-label">Coste del albarán ×</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                min={1}
+                max={5}
+                step={0.1}
+                aria-label="Multiplicador de precio de venta"
+                className="settings-mult"
+                value={mult}
+                onChange={(e) => updateMult(parseFloat(e.target.value) || 0)}
+              />
+              <span className="settings-label">
+                → una botella de 100 € se vende a {Math.max(5, Math.round((100 * (mult || 0)) / 5) * 5)} €
+              </span>
+            </div>
+            <div className="settings-note">
+              Se aplica al crear referencias nuevas desde albaranes (redondeado a 5 €).
+              El precio siempre se puede ajustar a mano después.
             </div>
           </div>
         )}
