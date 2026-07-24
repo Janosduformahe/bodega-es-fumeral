@@ -10,7 +10,11 @@ export type FilaExcel = {
   nombre: string;
   anio: number | null;
   talla: string | null;
-  stock: number; // columna de fecha más reciente; vacío = 0
+  stock: number; // columna de fecha más reciente
+  /** true si la celda de cantidad está en blanco (≠ contar 0 botellas):
+   *  no se toca el stock y la referencia se propone para dar de baja */
+  sinCantidad: boolean;
+  proveedor: string | null;
   precioVenta: number | null;
   precioCompra: number | null;
 };
@@ -82,6 +86,7 @@ export function parsearInventario(buffer: Buffer): {
     const iTalla = idx("talla");
     const iPV = hdr.findIndex((h) => normalizar(String(h ?? "")).startsWith("preco venta") || normalizar(String(h ?? "")).startsWith("precio venta"));
     const iCompra = hdr.findIndex((h) => normalizar(String(h ?? "")) === "compra");
+    const iProv = hdr.findIndex((h) => normalizar(String(h ?? "")) === "proveedor");
 
     // Columna de stock: la fecha más reciente de la cabecera
     let iStock = -1;
@@ -108,13 +113,19 @@ export function parsearInventario(buffer: Buffer): {
       if (typeof bodega !== "string" || !bodega.trim()) continue;
       if (typeof nombre !== "string" || !nombre.trim()) continue;
       const anio = num(row[iAnio]);
+      const celdaStock = row[iStock];
+      const sinCantidad =
+        celdaStock === undefined || celdaStock === null || celdaStock === "";
+      const prov = iProv >= 0 ? row[iProv] : null;
       filas.push({
         fila: r + 1,
         bodega: bodega.trim(),
         nombre: nombre.trim(),
         anio: anio && anio > 1900 && anio < 2100 ? Math.round(anio) : null,
         talla: iTalla >= 0 && typeof row[iTalla] === "string" && (row[iTalla] as string).trim() ? (row[iTalla] as string).trim() : null,
-        stock: Math.max(0, Math.round(num(row[iStock]) ?? 0)),
+        stock: Math.max(0, Math.round(num(celdaStock) ?? 0)),
+        sinCantidad,
+        proveedor: typeof prov === "string" && prov.trim() ? prov.trim() : null,
         precioVenta: iPV >= 0 ? num(row[iPV]) : null,
         precioCompra: iCompra >= 0 ? num(row[iCompra]) : null,
       });

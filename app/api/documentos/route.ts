@@ -225,6 +225,7 @@ REGLAS:
     precios: [],
     nuevas_referencias: [],
     no_encontrados: [],
+    bajas_sugeridas: [],
     preview: [],
   };
 
@@ -233,12 +234,16 @@ REGLAS:
     ...paresExtra,
   ];
   for (const { fila, vino } of todosPares) {
-    const delta = fila.stock - vino.stock;
+    // Celda de cantidad en blanco ≠ contar 0: no se toca el stock,
+    // se propone dar de baja la referencia
+    const delta = fila.sinCantidad ? 0 : fila.stock - vino.stock;
     const pv = Math.round(fila.precioVenta ?? 0);
     const cambiaPrecio = pv > 0 && pv !== Math.round(Number(vino.precio));
     const pc = Math.round((fila.precioCompra ?? 0) * 100) / 100;
     const cambiaCompra =
       pc > 0 && pc !== Math.round(Number(vino.precio_compra ?? 0) * 100) / 100;
+    const cambiaProv =
+      !!fila.proveedor && fila.proveedor !== (vino.proveedor ?? "");
     if (delta !== 0) {
       resultado.movimientos.push({
         vino_id: vino.id,
@@ -246,14 +251,23 @@ REGLAS:
         nota: `Excel ${inv.etiquetaFecha}: ${vino.stock} → ${fila.stock}`,
       });
     }
-    if (cambiaPrecio || cambiaCompra) {
+    if (cambiaPrecio || cambiaCompra || cambiaProv) {
       resultado.precios!.push({
         vino_id: vino.id,
         ...(cambiaPrecio ? { precio_nuevo: pv } : {}),
         ...(cambiaCompra ? { precio_compra_nuevo: pc } : {}),
+        ...(cambiaProv ? { proveedor_nuevo: fila.proveedor as string } : {}),
       });
     }
-    if (delta !== 0 || cambiaPrecio || cambiaCompra) {
+    if (fila.sinCantidad) {
+      resultado.bajas_sugeridas!.push({
+        vino_id: vino.id,
+        etiqueta: `${vino.bodega} — ${vino.nombre}${vino.anio ? ` (${vino.anio})` : ""}`,
+        motivo: "sin_cantidad",
+        stock: vino.stock,
+      });
+    }
+    if (delta !== 0 || cambiaPrecio || cambiaCompra || cambiaProv) {
       resultado.preview!.push({
         vino_id: vino.id,
         etiqueta: `${vino.bodega} — ${vino.nombre}${vino.anio ? ` (${vino.anio})` : ""}`,
@@ -263,10 +277,11 @@ REGLAS:
           cambiaCompra
             ? `Coste: ${vino.precio_compra ? `${vino.precio_compra}€` : "—"} → ${pc}€`
             : "",
+          cambiaProv ? `Proveedor: ${fila.proveedor}` : "",
         ]
           .filter(Boolean)
           .join(" · "),
-        qty: String(fila.stock),
+        qty: delta !== 0 ? String(fila.stock) : "·",
         direccion: delta >= 0 ? "plus" : "minus",
       });
     }
@@ -297,6 +312,7 @@ REGLAS:
       uva: clasif.uva?.trim() || null,
       precio,
       precio_compra: f.precioCompra ?? null,
+      proveedor: f.proveedor,
       stock: f.stock,
     });
     resultado.preview!.push({
@@ -310,15 +326,15 @@ REGLAS:
     });
   }
 
-  // Vinos de la bodega que el Excel no menciona: se dejan como están
+  // Vinos de la bodega que el Excel no menciona: candidatos a baja
   const idsExtra = new Set(paresExtra.map((p) => p.vino.id));
-  const noEnExcel = vinosSueltos.filter((v) => !idsExtra.has(v.id) && v.stock > 0);
-  if (noEnExcel.length) {
-    resultado.no_encontrados!.push({
-      texto: `${noEnExcel.length} vinos de la bodega no aparecen en el Excel (se dejan sin cambios): ${noEnExcel
-        .slice(0, 5)
-        .map((v) => `${v.bodega} ${v.nombre}`)
-        .join("; ")}${noEnExcel.length > 5 ? "…" : ""}`,
+  for (const v of vinosSueltos) {
+    if (idsExtra.has(v.id)) continue;
+    resultado.bajas_sugeridas!.push({
+      vino_id: v.id,
+      etiqueta: `${v.bodega} — ${v.nombre}${v.anio ? ` (${v.anio})` : ""}`,
+      motivo: "no_en_excel",
+      stock: v.stock,
     });
   }
 

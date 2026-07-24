@@ -12,6 +12,7 @@ export type Vino = {
   uva: string | null;
   precio: number;
   precio_compra: number | null;
+  proveedor: string | null;
   stock: number;
   activo: boolean;
 };
@@ -42,10 +43,19 @@ export type DocumentoRow = {
 export type ResultadoDocumento = {
   proveedor_o_fecha?: string;
   movimientos: { vino_id: number; qty: number; nota?: string }[];
+  /** Actualizaciones de ficha (precio de venta, coste, proveedor) */
   precios?: {
     vino_id: number;
     precio_nuevo?: number;
     precio_compra_nuevo?: number;
+    proveedor_nuevo?: string;
+  }[];
+  /** Referencias que el inventario sugiere retirar del catálogo */
+  bajas_sugeridas?: {
+    vino_id: number;
+    etiqueta: string;
+    motivo: "sin_cantidad" | "no_en_excel";
+    stock: number;
   }[];
   nuevas_referencias?: {
     anio: number | null;
@@ -56,6 +66,7 @@ export type ResultadoDocumento = {
     uva: string | null;
     precio: number;
     precio_compra?: number | null;
+    proveedor?: string | null;
     stock: number;
   }[];
   no_encontrados?: { texto: string; qty?: number }[];

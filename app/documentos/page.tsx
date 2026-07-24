@@ -7,6 +7,7 @@ import {
   IconPackage,
   IconReceipt,
   IconTable,
+  IconTrash,
 } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -35,6 +36,8 @@ export default function DocumentosPage() {
     fileName: string;
   } | null>(null);
   const [applying, setApplying] = useState(false);
+  const [bajando, setBajando] = useState(false);
+  const [bajadas, setBajadas] = useState<Set<number>>(new Set());
   const [history, setHistory] = useState<DocumentoRow[]>([]);
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -135,6 +138,21 @@ export default function DocumentosPage() {
     );
     setPending(null);
     loadHistory();
+  }
+
+  async function darDeBajaLote(ids: number[], etiqueta: string) {
+    if (!ids.length) return;
+    if (!confirm(`¿Dar de baja ${ids.length} referencias ${etiqueta}?\n\nDesaparecerán del inventario; el historial se conserva.`))
+      return;
+    setBajando(true);
+    const { data, error } = await supabase.rpc("dar_de_baja", { p_ids: ids });
+    setBajando(false);
+    if (error) {
+      setError("Error al dar de baja: " + error.message);
+      return;
+    }
+    setBajadas((prev) => new Set([...prev, ...ids]));
+    alert(`✓ ${data} referencias dadas de baja.`);
   }
 
   async function descartar() {
@@ -305,6 +323,66 @@ export default function DocumentosPage() {
                 );
               })}
             </div>
+            {(() => {
+              const bajas = (r.bajas_sugeridas ?? []).filter(
+                (b) => !bajadas.has(b.vino_id)
+              );
+              if (!bajas.length) return null;
+              const seguras = bajas.filter((b) => b.stock === 0);
+              const conStock = bajas.filter((b) => b.stock > 0);
+              return (
+                <div className="bajas-sec">
+                  <div className="bajas-head">
+                    Referencias que este inventario ya no incluye ({bajas.length})
+                  </div>
+                  {seguras.length > 0 && (
+                    <>
+                      <div className="bajas-lista">
+                        {seguras.slice(0, 8).map((b) => (
+                          <div className="bajas-item" key={b.vino_id}>
+                            {b.etiqueta}
+                            <span className="bajas-motivo">
+                              {b.motivo === "sin_cantidad"
+                                ? "sin cantidad"
+                                : "no está en el Excel"}
+                            </span>
+                          </div>
+                        ))}
+                        {seguras.length > 8 && (
+                          <div className="bajas-item bajas-mas">
+                            y {seguras.length - 8} más…
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        className="btn-baja-lote"
+                        disabled={bajando}
+                        onClick={() =>
+                          darDeBajaLote(
+                            seguras.map((b) => b.vino_id),
+                            "sin stock"
+                          )
+                        }
+                      >
+                        <IconTrash size={15} />
+                        {bajando
+                          ? "Dando de baja…"
+                          : `Dar de baja las ${seguras.length} sin stock`}
+                      </button>
+                    </>
+                  )}
+                  {conStock.length > 0 && (
+                    <div className="bajas-aviso">
+                      ⚠ {conStock.length} de ellas todavía tienen botellas en la
+                      app (
+                      {conStock.reduce((s, b) => s + b.stock, 0)} en total). No se
+                      incluyen en el botón: revísalas una a una desde el
+                      inventario.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             <div className="dr-actions">
               <button className="btn-discard" onClick={descartar}>
                 Descartar
