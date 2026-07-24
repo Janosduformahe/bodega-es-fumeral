@@ -8,6 +8,7 @@ import {
   IconClock,
   IconSearch,
   IconSliders,
+  IconTrash,
   IconWine,
   IconX,
 } from "@/components/icons";
@@ -161,7 +162,11 @@ export default function InventarioPage() {
         (payload) => {
           if (payload.eventType === "UPDATE") {
             const v = payload.new as Vino;
-            setWines((prev) => prev.map((w) => (w.id === v.id ? v : w)));
+            setWines((prev) =>
+              v.activo
+                ? prev.map((w) => (w.id === v.id ? v : w))
+                : prev.filter((w) => w.id !== v.id)
+            );
           } else if (payload.eventType === "INSERT") {
             const v = payload.new as Vino;
             setWines((prev) =>
@@ -227,6 +232,24 @@ export default function InventarioPage() {
     setModal(null);
     setMQty("1");
     setMNote("");
+  }
+
+  async function darDeBaja(vino: Vino) {
+    const aviso =
+      vino.stock > 0
+        ? `"${vino.bodega} — ${vino.nombre}" aún tiene ${vino.stock} botellas en stock.\n\n¿Dar de baja igualmente? Desaparecerá del inventario (el historial se conserva).`
+        : `¿Dar de baja "${vino.bodega} — ${vino.nombre}"?\n\nDesaparecerá del inventario (el historial se conserva).`;
+    if (!confirm(aviso)) return;
+    const { error } = await supabase
+      .from("vinos")
+      .update({ activo: false })
+      .eq("id", vino.id);
+    if (error) {
+      alert("Error al dar de baja: " + error.message);
+      return;
+    }
+    setWines((prev) => prev.filter((w) => w.id !== vino.id));
+    setHistVino(null);
   }
 
   async function openHist(vino: Vino) {
@@ -732,6 +755,9 @@ export default function InventarioPage() {
             </div>
             <button className="btn-close-hist" onClick={() => setHistVino(null)}>
               Cerrar
+            </button>
+            <button className="btn-baja" onClick={() => darDeBaja(histVino)}>
+              <IconTrash size={15} /> Dar de baja esta referencia
             </button>
           </div>
         </div>
