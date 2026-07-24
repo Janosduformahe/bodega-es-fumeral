@@ -1,0 +1,35 @@
+── BARRIDO DE UMBRALES (catálogo completo, 65 líneas) ──
+umbral | aciertos | falsos+ | perdidas | precisión
+  0.60 |       41 |       8 |        1 | 84%
+  0.67 |       38 |       4 |        5 | 90%
+  0.70 |       38 |       4 |        5 | 90%
+  0.75 |       37 |       4 |        6 | 90%
+  0.80 |       33 |       2 |       11 | 94%
+  0.85 |       33 |       2 |       11 | 94%
+  0.90 |       31 |       2 |       13 | 94%
+  0.95 |       29 |       2 |       15 | 94%
+  1.00 |       29 |       2 |       15 | 94%
+
+── FALSOS POSITIVOS con umbral 0.90 ──
+  "Oxer Wines Kalamity Tinto"
+    propone 1.00 ID530 Oxer Wines | Kalamity tinto
+    verdad: ID232 Oxer Bastegieta | Kalamity Tinto
+  "Juan Valdelana Viñedo Singular"
+    propone 1.00 ID59 Juan Valdelana | Tronco Negro Viñedo Singular
+    verdad: ID524 Juan Valdelana | Viñedo singular
+
+── ACIERTOS QUE CAEN EN LA BANDA DE SUGERENCIA (0.60–0.90) ──
+  0.75 "E.Rodez Les Beurys et Secs Grand Cru" → ID42
+  0.67 "Xurxo 69 Arrobas" → ID69
+  0.60 "M.Cantalapiedra Majuelo del Chiviritero 150cl" → ID330
+  0.85 "Manto de la Riva, Manzanilla de San Lucar" → ID332
+  0.71 "Cati Ribot – Son Llebre Blanc" → ID303
+  0.75 "Miquel Gelabert – Vinya des Moré" → ID528
+  0.75 "Grégory Pérez Mengoba de Espanillo" → ID519
+  0.67 "Dominio de Es La Diva" → ID515
+  0.86 "Nicole Lamarche Nuits-Saint-Georges 1er Cru Les Cras" → ID568
+  0.75 "Comte Georges Vogüé, Grand Cru" → ID544
+  (10 aciertos recuperables con confirmación de un toque)
+
+── 1 ACIERTOS QUE NI SIQUIERA LLEGAN A 0.60 (irían a búsqueda manual) ──
+  0.44 "Gutier Seijo Mixtura Blue" → deberia ser ID305 Mixtura | Ourense

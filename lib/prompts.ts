@@ -1,4 +1,4 @@
-import type { Vino } from "./types";
+﻿import type { Vino } from "./types";
 
 export function promptAlbaranCierre(tipo: "albaran" | "cierre", vinos: Vino[]) {
   const catalogo = vinos
@@ -46,36 +46,6 @@ ${
     : `- Si no estás seguro del ID, usa confianza "baja" o ponlo en no_encontrados.`
 }
 - Devuelve SOLO el JSON, nada más.`;
-}
-
-/** Lectura de la carta de vinos: qué referencias figuran y a qué precio */
-export function promptCarta(vinos: Vino[]) {
-  const catalogo = vinos
-    .map(
-      (w) =>
-        `ID:${w.id} | ${w.bodega} | ${w.nombre} | ${w.anio ?? "NV"} | ${w.tipo} | ${w.pais}`
-    )
-    .join("\n");
-
-  return `Eres el sumiller digital de un restaurante. Te paso la CARTA DE VINOS vigente (puede venir en PDF, foto o varias páginas, normalmente agrupada por tipo de vino, región o país, con el precio a la derecha de cada línea).
-
-Tu tarea:
-1. Leer TODAS las líneas de vino de la carta, de principio a fin, sin saltarte ninguna sección.
-2. Para cada vino de la carta, localizar su ID en el catálogo de la bodega (abajo).
-3. Devolver SOLO un JSON válido, COMPACTO EN UNA SOLA LÍNEA, sin markdown ni texto extra:
-
-{"items":[{"id":5,"precio":85,"texto_original":"tal como aparece en la carta","confianza":"alta"}],"no_encontrados":[{"texto":"línea de la carta que no está en el catálogo"}]}
-
-REGLAS:
-- Usa coincidencia aproximada de nombres: la carta suele abreviar o escribir distinto que el inventario.
-- IMPORTANTE: cada añada es una referencia distinta. Si la carta indica añada, empareja con el vino de ESA añada; si el catálogo solo tiene otra añada, ponlo en "no_encontrados" indicando la añada de la carta.
-- "precio" = el precio de venta que figura en la carta (número, sin símbolo). Si una línea no tiene precio visible, omite el campo.
-- Distingue formatos: si la carta lista "Magnum" o "1,5 L" es una referencia distinta de la botella de 75 cl.
-- No inventes: si no estás razonablemente seguro del ID, ponlo en "no_encontrados" con el texto literal.
-- Ignora encabezados de sección, textos de maridaje, precios por copa sin vino asociado y notas de cata.
-
-CATÁLOGO DE LA BODEGA:
-${catalogo}`;
 }
 
 export function promptExcel(csv: string, vinos: Vino[], columnaStock?: string | null) {

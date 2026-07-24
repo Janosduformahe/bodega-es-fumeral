@@ -25,6 +25,66 @@ const TIPO_LABEL: Record<TipoDocumento, string> = {
   carta: "Carta",
 };
 
+type VinoBusca = {
+  id: number;
+  bodega: string;
+  nombre: string;
+  anio: number | null;
+  precio: number;
+  stock: number;
+};
+
+const etiquetaVino = (v: VinoBusca) =>
+  `${v.bodega} — ${v.nombre}${v.anio ? ` (${v.anio})` : ""}`;
+
+/** Buscador de una referencia del catálogo para resolver a mano */
+function BuscadorVino({
+  catalogo,
+  excluidos,
+  onPick,
+}: {
+  catalogo: VinoBusca[];
+  excluidos: Set<number>;
+  onPick: (v: VinoBusca) => void;
+}) {
+  const [q, setQ] = useState("");
+  const res = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    if (t.length < 2) return [];
+    const palabras = t.split(/\s+/);
+    return catalogo
+      .filter((v) => {
+        if (excluidos.has(v.id)) return false;
+        const s = `${v.bodega} ${v.nombre} ${v.anio ?? ""}`.toLowerCase();
+        return palabras.every((p) => s.includes(p));
+      })
+      .slice(0, 6);
+  }, [q, catalogo, excluidos]);
+
+  return (
+    <div className="busca">
+      <input
+        className="busca-input"
+        type="search"
+        placeholder="Buscar en el inventario…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
+      {res.map((v) => (
+        <button key={v.id} className="busca-item" onClick={() => onPick(v)}>
+          <span className="busca-nom">{etiquetaVino(v)}</span>
+          <span className="busca-meta">
+            {v.stock} bot. · {v.precio}€
+          </span>
+        </button>
+      ))}
+      {q.trim().length >= 2 && !res.length && (
+        <div className="busca-vacio">Sin resultados</div>
+      )}
+    </div>
+  );
+}
+
 export default function DocumentosPage() {
   const supabase = useMemo(() => createClient(), []);
   const [docType, setDocType] = useState<TipoDocumento>("albaran");
@@ -36,11 +96,16 @@ export default function DocumentosPage() {
     documento_id: number;
     resultado: ResultadoDocumento;
     fileName: string;
+    tipo: TipoDocumento;
   } | null>(null);
   const [applying, setApplying] = useState(false);
   const [bajando, setBajando] = useState(false);
   const [bajadas, setBajadas] = useState<Set<number>>(new Set());
   const [history, setHistory] = useState<DocumentoRow[]>([]);
+  // Revisión de la carta: sugerencias aceptadas y resoluciones manuales
+  const [sugOk, setSugOk] = useState<Set<number>>(new Set());
+  const [manual, setManual] = useState<Map<string, VinoBusca>>(new Map());
+  const [catalogo, setCatalogo] = useState<VinoBusca[]>([]);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const fileExcelRef = useRef<HTMLInputElement>(null);
@@ -91,11 +156,22 @@ export default function DocumentosPage() {
       if (!resp.ok) throw new Error(data.error || `Error ${resp.status}`);
       if (!data.documento_id || !data.resultado) throw new Error("Respuesta inválida del servidor");
       addLog("✓ Documento leído. Revisa la previsualización.");
+      setSugOk(new Set());
+      setManual(new Map());
       setPending({
         documento_id: data.documento_id,
         resultado: data.resultado,
         fileName: file.name,
+        tipo: docType,
       });
+      if (docType === "carta" && !catalogo.length) {
+        const { data: vs } = await supabase
+          .from("vinos")
+          .select("id, bodega, nombre, anio, precio, stock")
+          .eq("activo", true)
+          .order("bodega");
+        setCatalogo((vs as VinoBusca[]) || []);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error inesperado");
     } finally {
@@ -121,8 +197,59 @@ export default function DocumentosPage() {
     }
   }
 
+  /** Lista final de la carta: casadas + sugerencias aceptadas + manuales */
+  function itemsCarta() {
+    const r = pending!.resultado;
+    const items = [...(r.carta_items ?? [])];
+    (r.carta_sugerencias ?? []).forEach((s, i) => {
+      if (sugOk.has(i))
+        items.push({ vino_id: s.vino_id, precio: s.precio, texto: s.texto });
+    });
+    for (const [texto, v] of manual) {
+      const linea = (r.carta_sin_casar ?? []).find((x) => x.texto === texto);
+      items.push({ vino_id: v.id, precio: linea?.precio ?? null, texto });
+    }
+    // Una referencia no puede entrar dos veces
+    const vistos = new Set<number>();
+    return items.filter((i) => !vistos.has(i.vino_id) && vistos.add(i.vino_id));
+  }
+
+  async function aplicarCarta() {
+    if (!pending) return;
+    const items = itemsCarta();
+    const fuera = catalogo.length - items.length;
+    if (
+      !confirm(
+        `Se marcarán ${items.length} referencias EN carta y ${fuera > 0 ? fuera : 0} quedarán FUERA de carta.\n\nNo se toca el stock. ¿Aplicar?`
+      )
+    )
+      return;
+    setApplying(true);
+    const { data, error } = await supabase.rpc("aplicar_carta", {
+      p_documento_id: pending.documento_id,
+      p_items: items,
+    });
+    setApplying(false);
+    if (error) {
+      setError("Error al aplicar: " + error.message);
+      return;
+    }
+    const res = data as {
+      en_carta: number;
+      fuera_de_carta: number;
+      precios_actualizados: number;
+      alias_guardados: number;
+    };
+    alert(
+      `✓ Carta aplicada.\n\n${res.en_carta} referencias en carta · ${res.fuera_de_carta} fuera\n${res.precios_actualizados} precios actualizados\n${res.alias_guardados} nombres recordados para la próxima carta`
+    );
+    setPending(null);
+    loadHistory();
+  }
+
   async function aplicar() {
     if (!pending) return;
+    if (pending.tipo === "carta") return aplicarCarta();
     setApplying(true);
     const { data, error } = await supabase.rpc("aplicar_documento", {
       p_documento_id: pending.documento_id,
@@ -351,6 +478,107 @@ export default function DocumentosPage() {
                 );
               })}
             </div>
+            {pending.tipo === "carta" && (
+              <>
+                {(r.carta_sugerencias ?? []).length > 0 && (
+                  <div className="rev-sec">
+                    <div className="rev-head">
+                      ¿Es el mismo vino? ({(r.carta_sugerencias ?? []).length})
+                      <span className="rev-sub">
+                        Toca para incluirlo en la carta
+                      </span>
+                    </div>
+                    {(r.carta_sugerencias ?? []).map((s, i) => (
+                      <button
+                        key={i}
+                        className={`sug-item${sugOk.has(i) ? " on" : ""}`}
+                        onClick={() =>
+                          setSugOk((prev) => {
+                            const n = new Set(prev);
+                            if (n.has(i)) n.delete(i);
+                            else n.add(i);
+                            return n;
+                          })
+                        }
+                      >
+                        <span className="sug-check">{sugOk.has(i) ? "✓" : ""}</span>
+                        <span className="sug-text">
+                          <span className="sug-carta">{s.texto}</span>
+                          <span className="sug-flecha">
+                            ≈ {s.etiqueta}
+                            {s.precio ? ` · ${s.precio}€` : ""}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {(r.carta_sin_casar ?? []).length > 0 && (
+                  <div className="rev-sec">
+                    <div className="rev-head">
+                      No están en el inventario ({(r.carta_sin_casar ?? []).length})
+                      <span className="rev-sub">
+                        Búscalas si crees que sí están con otro nombre
+                      </span>
+                    </div>
+                    {(r.carta_sin_casar ?? []).map((l) => {
+                      const elegido = manual.get(l.texto);
+                      return (
+                        <div className="manual-item" key={l.texto}>
+                          <div className="manual-linea">
+                            <span className="manual-carta">{l.texto}</span>
+                            {l.precio ? (
+                              <span className="manual-precio">{l.precio}€</span>
+                            ) : null}
+                          </div>
+                          {l.nota && <div className="manual-nota">{l.nota}</div>}
+                          {elegido ? (
+                            <div className="manual-elegido">
+                              ✓ {etiquetaVino(elegido)}
+                              <button
+                                className="manual-quitar"
+                                onClick={() =>
+                                  setManual((prev) => {
+                                    const n = new Map(prev);
+                                    n.delete(l.texto);
+                                    return n;
+                                  })
+                                }
+                              >
+                                quitar
+                              </button>
+                            </div>
+                          ) : (
+                            <BuscadorVino
+                              catalogo={catalogo}
+                              excluidos={
+                                new Set(itemsCarta().map((i) => i.vino_id))
+                              }
+                              onPick={(v) =>
+                                setManual((prev) =>
+                                  new Map(prev).set(l.texto, v)
+                                )
+                              }
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="rev-resumen">
+                  <strong>{itemsCarta().length}</strong> referencias quedarán{" "}
+                  <strong>en carta</strong> ·{" "}
+                  <strong>
+                    {Math.max(0, catalogo.length - itemsCarta().length)}
+                  </strong>{" "}
+                  fuera de carta (siguen en la bodega, no se toca el stock)
+                </div>
+              </>
+            )}
+
             {(() => {
               const bajas = (r.bajas_sugeridas ?? []).filter(
                 (b) => !bajadas.has(b.vino_id)
@@ -415,8 +643,21 @@ export default function DocumentosPage() {
               <button className="btn-discard" onClick={descartar}>
                 Descartar
               </button>
-              <button className="btn-apply" onClick={aplicar} disabled={applying || nMovs + nNuevas === 0}>
-                {applying ? "Aplicando…" : "Aplicar al inventario"}
+              <button
+                className="btn-apply"
+                onClick={aplicar}
+                disabled={
+                  applying ||
+                  (pending.tipo === "carta"
+                    ? itemsCarta().length === 0
+                    : nMovs + nNuevas === 0)
+                }
+              >
+                {applying
+                  ? "Aplicando…"
+                  : pending.tipo === "carta"
+                    ? "Aplicar la carta"
+                    : "Aplicar al inventario"}
               </button>
             </div>
           </div>

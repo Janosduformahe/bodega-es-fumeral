@@ -52,8 +52,20 @@ export type ResultadoDocumento = {
     precio_compra_nuevo?: number;
     proveedor_nuevo?: string;
   }[];
-  /** Documentos de tipo carta: ids que quedan EN carta (el resto, fuera) */
+  /** Documentos de tipo carta: ids casados con certeza (el resto, fuera) */
   carta_ids?: number[];
+  /** Líneas de la carta con un candidato probable, a confirmar por el equipo */
+  carta_sugerencias?: {
+    texto: string;
+    vino_id: number;
+    etiqueta: string;
+    score: number;
+    precio: number | null;
+  }[];
+  /** Líneas de la carta sin candidato: se resuelven buscando a mano */
+  carta_sin_casar?: { texto: string; precio: number | null; nota?: string }[];
+  /** Detalle de lo casado automáticamente (para aplicar precios y alias) */
+  carta_items?: { vino_id: number; precio: number | null; texto: string }[];
   /** Referencias que el inventario sugiere retirar del catálogo */
   bajas_sugeridas?: {
     vino_id: number;

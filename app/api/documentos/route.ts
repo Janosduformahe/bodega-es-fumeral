@@ -1,14 +1,25 @@
 ﻿import { NextResponse, type NextRequest } from "next/server";
 import { jsonrepair } from "jsonrepair";
 import * as XLSX from "xlsx";
+import {
+  emparejarCarta,
+  mismaReferenciaOtraAnada,
+  promptExtraerCarta,
+} from "@/lib/carta";
 import { emparejar, parsearInventario, type FilaExcel } from "@/lib/excel";
 import { createClient } from "@/lib/supabase/server";
-import { promptAlbaranCierre, promptCarta, promptExcel } from "@/lib/prompts";
+import { promptAlbaranCierre, promptExcel } from "@/lib/prompts";
 import type { ResultadoDocumento, TipoVino, Vino } from "@/lib/types";
 
 export const maxDuration = 120; // la lectura IA de un PDF puede tardar
 
 const TIPOS_VINO: TipoVino[] = ["Espumoso", "Blanco", "Rosado", "Tinto", "Dulce"];
+
+// Calibrados contra la carta real del restaurante (65 líneas de referencia):
+// ≥0.80 acierta el 94% (los 2 fallos son duplicados del propio catálogo);
+// entre 0.55 y 0.80 se pide confirmación de un toque.
+const UMBRAL_AUTO = 0.8;
+const UMBRAL_SUGERENCIA = 0.55;
 
 type ContentPart =
   | { type: "text"; text: string }
@@ -459,7 +470,7 @@ export async function POST(req: NextRequest) {
     // Construir el contenido para la IA según el tipo de archivo
     let parts: ContentPart[];
     if (tipo === "carta") {
-      const promptTxt = promptCarta(vinos);
+      const promptTxt = promptExtraerCarta();
       if (esHojaCalculo) {
         parts = [
           { type: "text", text: `${promptTxt}\n\nCONTENIDO DE LA CARTA:\n${aCsv()}` },
@@ -522,63 +533,105 @@ export async function POST(req: NextRequest) {
       precios: [],
       nuevas_referencias: [],
       no_encontrados: [],
+      bajas_sugeridas: [],
+      carta_sugerencias: [],
       preview: [],
     };
 
     if (tipo === "carta") {
-      const items = (parsed.items ?? []) as {
-        id: number;
-        precio?: number;
-        texto_original?: string;
-        confianza?: string;
-      }[];
-      const enCarta = new Set<number>();
-      for (const item of items) {
-        const w = porId.get(Number(item.id));
-        if (!w || enCarta.has(w.id)) continue;
-        enCarta.add(w.id);
-        const pv = Math.round(Number(item.precio) || 0);
-        if (pv > 0 && pv !== Math.round(Number(w.precio))) {
-          resultado.precios!.push({ vino_id: w.id, precio_nuevo: pv });
+      // La IA solo transcribe; el casado con el catálogo se hace en código
+      // (exhaustivo por construcción) en tres tramos de confianza.
+      const lineas = ((parsed.lineas ?? []) as Record<string, unknown>[])
+        .map((l) => ({
+          texto: String(l.texto ?? "").trim(),
+          bodega: l.bodega ? String(l.bodega) : null,
+          nombre: l.nombre ? String(l.nombre) : null,
+          anio: Number(l.anio) || null,
+          precio: Number(l.precio) || null,
+        }))
+        .filter((l) => l.texto || l.nombre);
+
+      // 1) Correspondencias ya confirmadas en cartas anteriores
+      const { data: aliasRows } = await supabase
+        .from("alias_carta")
+        .select("texto_norm, vino_id");
+      const alias = new Map(
+        (aliasRows ?? []).map((a) => [a.texto_norm as string, a.vino_id as number])
+      );
+
+      const items: { vino_id: number; precio: number | null; texto: string }[] = [];
+      const usados = new Set<number>();
+      const pendientes: typeof lineas = [];
+      for (const l of lineas) {
+        const id = alias.get(l.texto.toLowerCase().trim());
+        if (id && porId.has(id) && !usados.has(id)) {
+          usados.add(id);
+          items.push({ vino_id: id, precio: l.precio, texto: l.texto });
+        } else {
+          pendientes.push(l);
         }
-        // Solo se previsualizan los cambios: entra en carta o cambia de precio
-        if (!w.en_carta || (pv > 0 && pv !== Math.round(Number(w.precio)))) {
+      }
+
+      // 2) Emparejado determinista sobre el catálogo completo
+      const libres = vinos.filter((v) => !usados.has(v.id));
+      const { casados, sinCasar } = emparejarCarta(pendientes, libres, UMBRAL_SUGERENCIA);
+      for (const c of casados) {
+        if (c.score >= UMBRAL_AUTO) {
+          usados.add(c.vino.id);
+          items.push({
+            vino_id: c.vino.id,
+            precio: c.linea.precio ?? null,
+            texto: c.linea.texto,
+          });
+        } else {
+          resultado.carta_sugerencias!.push({
+            texto: c.linea.texto,
+            vino_id: c.vino.id,
+            etiqueta: `${c.vino.bodega} — ${c.vino.nombre}${c.vino.anio ? ` (${c.vino.anio})` : ""}`,
+            score: Math.round(c.score * 100) / 100,
+            precio: c.linea.precio ?? null,
+          });
+        }
+      }
+      // Muchas líneas "sin casar" son en realidad el mismo vino con otra
+      // añada: distinguirlo evita que parezcan errores de lectura
+      resultado.carta_sin_casar = sinCasar.map((l) => {
+        const otra = mismaReferenciaOtraAnada(l, libres);
+        return {
+          texto: l.texto,
+          precio: l.precio ?? null,
+          ...(otra
+            ? {
+                nota: `El inventario tiene esta referencia con añada ${otra.anio} (${otra.bodega} — ${otra.nombre})`,
+              }
+            : {}),
+        };
+      });
+
+      resultado.carta_items = items;
+      resultado.carta_ids = items.map((i) => i.vino_id);
+
+      // Previsualización: solo lo que cambia
+      for (const it of items) {
+        const w = porId.get(it.vino_id)!;
+        const pv = Math.round(Number(it.precio) || 0);
+        const cambiaPrecio = pv > 0 && pv !== Math.round(Number(w.precio));
+        if (!w.en_carta || cambiaPrecio) {
           resultado.preview!.push({
             vino_id: w.id,
-            etiqueta: `${item.confianza === "baja" ? "⚠ " : ""}${w.bodega} — ${w.nombre}${w.anio ? ` (${w.anio})` : ""}`,
+            etiqueta: `${w.bodega} — ${w.nombre}${w.anio ? ` (${w.anio})` : ""}`,
             detalle: [
-              !w.en_carta ? "Entra en carta" : "Ya estaba en carta",
-              pv > 0 && pv !== Math.round(Number(w.precio))
-                ? `Precio: ${w.precio}€ → ${pv}€`
-                : "",
-              item.confianza === "baja" ? "confianza baja" : "",
+              w.en_carta ? "Ya estaba en carta" : "Entra en carta",
+              cambiaPrecio ? `Precio: ${w.precio}€ → ${pv}€` : "",
             ]
               .filter(Boolean)
               .join(" · "),
             qty: pv > 0 ? `${pv} €` : "carta",
             direccion: "plus",
-            confianza: item.confianza,
           });
         }
       }
-      resultado.carta_ids = [...enCarta];
-      // Vinos que estaban en carta y esta ya no incluye
-      for (const w of vinos) {
-        if (w.en_carta && !enCarta.has(w.id)) {
-          resultado.preview!.push({
-            vino_id: w.id,
-            etiqueta: `${w.bodega} — ${w.nombre}${w.anio ? ` (${w.anio})` : ""}`,
-            detalle: `Sale de carta${w.stock > 0 ? ` · quedan ${w.stock} bot. en bodega` : ""}`,
-            qty: "fuera",
-            direccion: "minus",
-          });
-        }
-      }
-      const noEncCarta = (parsed.no_encontrados ?? []) as { texto: string }[];
-      resultado.no_encontrados = noEncCarta.map((x) => ({
-        texto: `${String(x.texto || "")} — en la carta pero no en el inventario`,
-      }));
-      resultado.proveedor_o_fecha = `Carta de vinos · ${enCarta.size} referencias`;
+      resultado.proveedor_o_fecha = `Carta de vinos · ${lineas.length} líneas leídas`;
     } else if (tipo === "excel") {
       const actualizaciones = (parsed.actualizaciones ?? []) as {
         id: number;

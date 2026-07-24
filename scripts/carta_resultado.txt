@@ -1,0 +1,122 @@
+extracción: 310 líneas en 97s (23399 tokens)
+
+══ RESULTADO ══
+  automáticas : 220
+  sugerencias : 26 (confirmar de un toque)
+  sin casar   : 63 (buscar a mano)
+  quedarían fuera de carta: 361
+
+── SUGERENCIAS ──
+  0.78 "2021 Fleurot Larose, Chassagne Montrachet, Chateau du Passe Temps"  ≈  Fleurot-Larose | Chassagne-Mont. Clos de la Rocquemaure (2021)
+  0.77 "2023 M.Cantalapiedra Majuelo El Espejo"  ≈  M. Cantalapiedra | Espejo La Seca (2023)
+  0.77 "2022 Eric Forest - La renomeé"  ≈  Eric Forest | La Renommée (2022)
+  0.77 "2022 Chateau Saint Maur Excellence"  ≈  Chateau Saint Maur | L'Excellence (2022)
+  0.77 "2020 Finca Rosalejo El doze"  ≈  Finca rosalejo | Eldoze (2020)
+  0.77 "2005 Château Mouton Rothschild"  ≈  Château Mouton Rothschild | Pauillac (2005)
+  0.76 "2023 Nicole Lamarche Echézeaux Grand Cru"  ≈  Nicole Lamarche | Echezaux (2023)
+  0.73 "2021 Denis Mortet, Gevrey-Chambertin 1er Cru Lavaux Saint-Jacques"  ≈  Duroche | Gevrey Chambertin (2021)
+  0.71 "2022 Thibault Liger Belair 1er Cru “Les Saint-Georges”"  ≈  Thibault Liger Belair | Aux charmes (2022)
+  0.66 "2018 Fleurot-Larose, Chassagne-Montrachet Clos de la Rocquemaure"  ≈  Fleurot La Rose | Chassagne Montrachet Clos de la Roquemaure (2018)
+  0.65 "2024 Oliver Moragues"  ≈  Oliver Moragues | Giró Ros (2024)
+  0.65 "1986 Château Ducru-Beaucaillou"  ≈  Château Ducru-Beaucaillou | Saint-Julien (1986)
+  0.64 "2023 M.Cantalapiedra Majuelo del Chiviritero 150cl"  ≈  Canta la Piedra | Majuelo Chiviritero Magnum (NV)
+  0.64 "2024 Seny"  ≈  Seny | Blanc (2024)
+  0.64 "2021 Boekenhoutskloof"  ≈  Boekenhoutskloof | Semillon (2021)
+  0.64 "1998 Château d’Yquem"  ≈  Château d'Yquem | Sauternes (1998)
+  0.63 "2022 Chateau Saint Maur Excellence 150cl"  ≈  Chateau Saint Maur | L'Excellence Magnum (2022)
+  0.61 "2024 Domaine Chateau d` Esclans"  ≈  Domaine Chateau d'Esclans | Esclans (2024)
+  0.60 "2021 Pierre & Marianne Duroché Grand Cru"  ≈  Duroche | Echezaux (2021)
+  0.60 "2024 Cati Ribot – Son Llebre Blanc"  ≈  O.Riviere | Le Blanc (2024)
+  0.59 "Jacquesson,748 Extra Brut"  ≈  Jacquesson | 746 Blanc de Blancs Extra Brut (NV)
+  0.58 "2023 Ossian Viñas Viejas 150cl"  ≈  Ossian | Viñas Viejas, Verdaejo ossain Magnum (NV)
+  0.58 "2022 Anne Claude Leflaive, Clau de Nell 150cl"  ≈  Anne Claude Leflavie | Clau de Nell Magnum (NV)
+  0.56 "2023 Domaine Roc de L'Abbaye Tradition 150cl"  ≈  Roc de l'Abbaye | Poully Fume Magnum (2023)
+  0.56 "2022 Domaine Roc de L'Abbaye Tradition 150cl"  ≈  Domaine Roc de L'Abbaye | Pouilly-Fumé Magnum (2022)
+  0.56 "2022 Hubert Bouzerau Gruère et fills"  ≈  Hubert Bouzerau | Meursault 1er Cru Charmes (2022)
+
+── SIN CASAR ──
+  "Jacquesson 748 Extra Brut 150cl" · 360€
+  "Alexandre Chartogne-Taillet Hors-Série Extra Brut" · 240€
+  "Alexandre Chartogne-Taillet Sainte-Anne Extra Brut" · 130€
+  "2019 La Guixera - El Mar Fóssil" · 90€
+  "2023 Oxer Bastegieta, Kalamity 150cl" · 450€
+  "2023 Attis Embaixador" · 80€
+  "2022 Xurxo 69 Arrobas" · 110€
+  "2022 Do Ferreiro Cepas vellas" · 90€
+  "2025 Do Ferreiro" · 50€
+  "2025 M.Cantalapiedra Cantayano" · 50€
+  "2021 Ismael González Sin Nombre" · 70€
+  "2025 Xurxo Ceibo" · 60€
+  "2021 Sangarida La Yegua" · 65€
+  "2022 Bründlmayer" · 65€
+  "2021 Zuccardi, Zaha, Mendoza" · 75€
+  "2021 Pierre Damoy – Les Ravry" · 120€
+  "2021 Domaine Benoit Ente, Antichtone" · 125€
+  "2020 Domaine Jean Collet & Fils Les Clos" · 200€
+  "2021 Domaine Jean Collet & Fils Les Clos" · 200€
+  "2023 Domaine Clément Lavallée Chablis" · 100€
+  "2024 Jean Collet & Fils 1er Cru Vaillons 150cl" · 480€
+  "2023 Simon Colin , Chassagne- Montrachet" · 170€
+  "2022 Armand Heitz Chassagne-Montrachet 1er Cru Morgeot 150cl" · 480€
+  "2022 Domaine Arnaud Baillot, Grand Cru 150cl" · 2200€
+  "2022 Comtesse de Chérisey, Hameau de Blagny" · 340€
+  "2021 Domaine Benoit Ente, Puligny-Montrachet, Clos de la Truffière 150cl" · 1200€
+  "2024 Antoine Jobard , Mersault Blagny Premier Cru" · 320€
+  "2023 Domaine B. Bonnin, Premier Cru Charmes Dessus" · 740€
+  "2023 Domaine B. Bonnin, Premier Cru Charmes Milieu" · 740€
+  "2022 Domaine B. Bonnin, Premier Cru “Les Genevrières”" · 770€
+  "2022 Domaine Roulot, Mersault Village" · 640€
+  "2023 Domaine Roulot, Mersault Vieruilles" · 750€
+  "2022 Comtesse Cherisey, Meursault La Genelotte 150cl" · 630€
+  "2022 Lise & Bertrand Jousset - Premier Rendez - Vous" · 80€
+  "2023 Maxime Crotet, Mâcon-Péronne" · 80€
+  "2022 La Grapp'A, La Pierre" · 90€
+  "2023 François de Nicolay Bouzeron" · 90€
+  "2025 Sasesibo" · 50€
+  "2022 Domaine Chateau d` Esclans 150cl" · 170€
+  "2021 Gaël Petit , Les falaises de Braise" · 70€
+  "2021 Gutier Seijo Mixtura Blue" · 110€
+  "2024 Magna Vides Vera Vides" · 60€
+  "2023 Magna Vides Tinto" · 80€
+  "2015 Oxer Wines Kuusu" · 140€
+  "2021 Guímaro, Capeliño" · 120€
+  "2023 Oxer Wines Kalamity Tinto 150cl" · 420€
+  "2021 Juan Valdelana Viñedo Singular" · 60€
+  "2018 Quinta Muradella Muradella Tinto" · 130€
+  "2022 Domaine Benoit Ente, Mathilde" · 120€
+  "2018 Thibault Liger-Belair Chambole-Musigny “Vieilles Vignes” 150cl" · 450€
+  "2021 Thibault Liger-Belair Chambole-Musigny “Vieilles Vignes” 150cl" · 450€
+  "2022 Domaine Charles Père & Fille, Bourgogne ''Terra Cotta''" · 75€
+  "2017 Domaine Ponsot Charmes Chambertin" · 600€
+  "2023 Charlopin-Tissier, Marsannay Les Longeroies" · 110€
+  "2019 David Duband Echezeaux Grand Cru 150cl" · 1400€
+  "2023 Pierre-Olivier Garcia, Nuits-Saint-Georges La Petite Charmotte" · 180€
+  "2016 Domaine Perrot-Minot, Nuits-Saint-Georges 1er Cru "Aux Murgers"" · 450€
+  "2022 Alain & Raphaël Corcia, Mercurey 1er Cru Les Crêts" · 95€
+  "2023 Pierre-Olivier Garcia, Brouilly La Folie" · 75€
+  "2009 Château Angélus" · 1200€
+  "2021 Comte Georges Vogüé, Grand Cru" · 1400€
+  "2021 Mascota Vineyards, Gran Mascota, Mendoza" · 55€
+  "2017 Domaine Hétszolo" · 60€
+
+── MUESTRA DE AUTOMÁTICAS (20) ──
+  1.00 "Tarlant Zero Brut Nature" → Tarlant | Zero Brut Nature
+  1.00 "Timothee Stroebel Heraclite Blanc de Meunier Brut Nature" → Timothée Stroebel | Heraclite Brut Nature
+  1.00 "Laherte Frères Blanc de Blanc Brut Nature" → Laherte Frères | Blanc de Blanc Brut Nature
+  1.00 "Frerejean Frères Grand Réserve Brut" → Frerejean Frères | Grand Réserve Brut
+  1.00 "Frerejean Frères VV26 Brut" → Frerejean Frères | VV26 Brut
+  1.00 "Christoffe Cuvée Réserve Brut" → Christoffe | Cuvée Réserve Brut
+  1.00 "Delamotte Blanc de Blancs Brut" → Delamotte | Blanc de Blancs Brut
+  1.00 "Krug Grande Cuvée 172ème Édition Brut" → Krug | Grande Cuvée 172ème
+  1.00 "Veuve Fourny & Fils Blanc de Blancs Brut Nature" → Veuve Fourny & Fils | Blanc de Blancs Brut Nature
+  1.00 "Minière F&R , Influence Brut" → Minière F&R | Influence Brut
+  1.00 "Rive Gauche, Gamet Brut" → Rive Gauche | Gamet Brut
+  1.00 "Billecart-Salmon Rosé Brut" → Billecart-Salmon | Rosé Brut
+  1.00 "Laurent-Perrier Rose Brut" → Laurent-Perrier | Rosé Brut
+  1.00 "Emmanuel Brochet Selected Extra Brut" → Emmanuel Brochet | Selected Extra Brut
+  1.00 "David Leclapart , L`Aphrodisiaque Extra Brut" → David Leclapart | L'Aphrodisiaque
+  1.00 "Philippe Lancelot, Les Bas De Saran Extra Brut" → Philippe Lancelot | Les Bas de Saran Extra Brut
+  1.00 "Bollinger Cuvee Special Brut" → Bollinger | Cuvée Spéciale Brut
+  1.00 "Adrien Dhondt-Grellet Les Terres Fines 1er Cru Blanc de Blancs Extra Brut" → Adrien Dhondt-Grellet | Les Terres Fines 1er Cru
+  1.00 "Adrien Dhondt-Grellet Les Nogers Extra Brut" → Adrien Dhondt-Grellet | Les Nogers Extra Brut
+  1.00 "Adrien Dhondt-Grellet Cramant Grand Cru Blanc de Blancs Extra Brut" → Dhondt Grellet | Cramant
