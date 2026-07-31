@@ -8,7 +8,8 @@
 import crypto from "crypto";
 
 /** Cifrado que usa su propio front antes de enviar las credenciales:
- *  AES-128-CBC con clave e IV fijos, salida en base64. */
+ *  AES-128-CBC con clave e IV fijos, base64, y después sustituyen los dos
+ *  caracteres que dan problemas en una URL por marcadores propios. */
 const CLAVE_HIOPOS = "B1B2B3B4B5B6B7B8";
 function cifrar(texto: string): string {
   const c = crypto.createCipheriv(
@@ -16,31 +17,73 @@ function cifrar(texto: string): string {
     Buffer.from(CLAVE_HIOPOS),
     Buffer.from(CLAVE_HIOPOS)
   );
-  return Buffer.concat([c.update(texto, "utf8"), c.final()]).toString("base64");
+  const b64 = Buffer.concat([c.update(texto, "utf8"), c.final()]).toString("base64");
+  return b64.replace(/\//g, "-999999-").replace(/\+/g, "-666666-");
+}
+
+/** Datos de la instancia analítica del cliente (orígenes de datos, tipo…) */
+async function datosCliente(customerId: string) {
+  const r = await fetch(
+    `https://cloudlicense03.hiopos.com/services/cloud/getCustomerAnalyticsDB?customerId=${customerId}`,
+    { headers: { "Content-Type": "text/xml" } }
+  );
+  const xml = await r.text();
+  const tag = (t: string) => {
+    const a = xml.indexOf(`<${t}>`);
+    return a === -1 ? "" : xml.slice(a + t.length + 2, xml.indexOf(`</${t}>`, a));
+  };
+  const spec = tag("specType");
+  return {
+    ipWS: tag("ipAddress"),
+    portWS: tag("port") || "1",
+    dbName: tag("dbName"),
+    specType: spec === "HioPos" ? "2" : spec === "FrontRest" ? "3" : "1",
+    datasourceList: [...xml.matchAll(/<datasourceList>(\d+)<\/datasourceList>/g)]
+      .map((m) => m[1])
+      .join(","),
+    marginCost: String(xml.includes("<groupList>8</groupList>")),
+    freeFields: String(xml.includes("<groupList>11</groupList>")),
+  };
 }
 
 /** Inicia sesión y devuelve un x-auth-token nuevo.
- *  GET /ErpCloud/session/login — el token viene en la cabecera de respuesta. */
+ *  GET /ErpCloud/session/login — el token viene en la cabecera de respuesta.
+ *  Después hay que inicializar la sesión (ver `abrirSesion`). */
 export async function login(): Promise<string> {
   const user = process.env.HIOPOS_USER;
   const password = process.env.HIOPOS_PASSWORD;
   const customerId = process.env.HIOPOS_CUSTOMER;
   const host = process.env.HIOPOS_HOST;
   if (!user || !password || !customerId || !host) {
-    throw new Error(
-      "Faltan HIOPOS_USER, HIOPOS_PASSWORD, HIOPOS_CUSTOMER o HIOPOS_HOST"
-    );
+    throw new Error("Faltan HIOPOS_USER, HIOPOS_PASSWORD, HIOPOS_CUSTOMER o HIOPOS_HOST");
   }
 
-  const params = new URLSearchParams({
-    user: cifrar(user),
-    password: cifrar(password),
-    customerId,
-    languageIsoCode: "ES",
-    isAnalytics: "true",
-    encrypted: "true",
-  });
-  const r = await fetch(`${host}/ErpCloud/session/login?${params}`, {
+  const c = await datosCliente(customerId);
+  const hoy = new Date();
+  const workDate = `'${hoy.getFullYear()}/${String(hoy.getMonth() + 1).padStart(2, "0")}/${String(hoy.getDate()).padStart(2, "0")}'`;
+
+  // Se construye a mano: los marcadores -999999- no deben re-codificarse
+  const q = [
+    `user=${cifrar(user)}`,
+    `password=${cifrar(password)}`,
+    `customerId=${customerId}`,
+    `languageIsoCode=es`,
+    `specType=${c.specType}`,
+    `ipWS=${cifrar(c.ipWS)}`,
+    `portWS=${cifrar(c.portWS)}`,
+    `dbName=${cifrar(c.dbName)}`,
+    `workDate=${encodeURIComponent(workDate)}`,
+    `datasourceList=${c.datasourceList}`,
+    `marginCost=${c.marginCost}`,
+    `isDocs=false`,
+    `isCloudDocs=false`,
+    `isAnalytics=true`,
+    `budget=true`,
+    `freeFields=${c.freeFields}`,
+    `encrypted=true`,
+  ].join("&");
+
+  const r = await fetch(`${host}/ErpCloud/session/login?${q}`, {
     headers: { "Content-Type": "application/json" },
   });
   const token = r.headers.get("x-auth-token");
@@ -48,6 +91,27 @@ export async function login(): Promise<string> {
     throw new Error(`Login de HioPOS falló (${r.status}): ${(await r.text()).slice(0, 150)}`);
   }
   return token;
+}
+
+/** Secuencia de arranque que hace el propio panel tras entrar: sin esto la
+ *  sesión existe pero no tiene contexto de empresa y los informes dan 500. */
+export async function abrirSesion(token: string): Promise<void> {
+  const host = process.env.HIOPOS_HOST!;
+  const cab = {
+    "x-auth-token": token,
+    accept: "application/json, text/plain, */*",
+    referer: `${host}/icgfront/analytics`,
+  };
+  const pasos = [
+    "/ErpCloud/report/isIcgUser/",
+    "/ErpCloud/report/setSessionRegionalConfiguration",
+    "/ErpCloud/report/getUser?mobileMode=false",
+    "/ErpCloud/entityLoader/company",
+    "/ErpCloud/report/getSessionConstants",
+  ];
+  for (const p of pasos) {
+    await fetch(`${host}${p}`, { headers: cab }).catch(() => null);
+  }
 }
 
 export type ArticuloVendido = {
@@ -257,8 +321,9 @@ export async function ventasDelDia(
     ? await pedirInforme(fecha, token, limite)
     : new Response(null, { status: 401 });
 
-  if (resp.status === 401 || resp.status === 403) {
+  if (resp.status === 401 || resp.status === 403 || resp.status === 500) {
     token = await login();
+    await abrirSesion(token);
     resp = await pedirInforme(fecha, token, limite);
   }
 

@@ -7,7 +7,39 @@ primeras filas:
 mensaje: Authentication failed
 
 ── vía cliente ──
-FALLO: HioPOS respondió 500: {
-  "errorCode" : -4,
-  "message" : "500: Internal Server Error"
-}
+✓ 151 artículos con ventas
+
+cod    uds   venta      docs  artículo
+────────────────────────────────────────────────────────────
+  785    15    975.00 €   12  KATSUSANDO
+ 2084     1    800.00 €    1  Ulysse Colin
+ 2085     1    780.00 €    1  Thibault Liger Charmes Chambertin 2022
+ 1890     1    750.00 €    1  Domaine Roulot Mersault Vieruilles
+  787    15    720.00 €   13  FIDEUÁ MERO
+  429   149    670.50 €   46  APERITIVO
+  784    12    563.00 €   11  STEAK TARTAR WAGYU
+ 1338     2    560.00 €    2  Domaine Pernot Belicard, Puligny-Montrachet 1er Cru Les Pucelles 2022 - Chardonnay
+ 1892     1    520.00 €    1  Domaine Comte Lafon Mersault 1er Cru Charmes
+  543    17    512.00 €   14  SASHIMI VENTRESCA
+  195    70    483.00 €   43  AGUA
+  667     8    440.00 €    7  SANGRIA CAVA
+ 1274     3    420.00 €    1  Rafael Palacios As Sortes 2023 - Godello (D.O. Valdeorras)
+ 1194     1    380.00 €    1  Krug Grande Cuvée 172ème Édition - Brut
+ 1700     2    338.00 €    2  LUBINA 1,3 KG
+   21    12    312.00 €   12  CALAMAR ANDALUZA
+ 1962     1    300.00 €    1  LANGOSTA 1,4 KG
+   16    14    294.00 €   14  TARTAR DE TOMATE
+   19   9.5    272.00 €   10  BUÑUELOS BOGAVANTE
+  697    10    260.00 €   10  MEJILLONES CHILLI CRAB
+ 1772     2    260.00 €    2  ROTJA 1,0 KG
+   39    18    252.00 €   16  TOMATES ALIÑADOS
+ 2037     1    250.00 €    1  Antoine Jobard 2024 Mersault Blagny
+   12    19    247.00 €    7  GILDAS PESCADO AZUL
+ 1125    10    240.00 €    9  GAMBA BLANCA HUELVA
+ 1655     1    234.00 €    1  GALLO 1,8 KG
+   37    18    216.00 €   15  PATATAS FRITAS
+ 1925     3    216.00 €    1  CIGALA TRONCO 0,225KG
+   23     5    210.00 €    5  ESPARDEÑA AJILLO
+ 1703     1    208.00 €    1  LUBINA 1,6 KG
+
+TOTAL: 923.24 unidades · 19959.00 €

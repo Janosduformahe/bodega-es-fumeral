@@ -1,50 +1,68 @@
-TPV 2026-07-31: 92 artículos vendidos
+TPV 2026-07-31: 151 artículos vendidos
 
 ══ RESULTADO ══
-  automáticos : 4
+  automáticos : 12
   sugerencias : 0
-  sin casar   : 86 (mayoría comida)
-  ventas por copa detectadas: 2
+  sin casar   : 135 (mayoría comida)
+  ventas por copa detectadas: 4
 
 ── VINOS QUE SE DESCONTARÍAN SOLOS ──
-  1.00 −3  "Cantayano"
+  1.00 −1  "Charles Heidsieck - Brut"
+        → Charles Heidsieck | Brut Reserve (NV) · stock 13
+  1.00 −6  "Cantayano"
         → M. Cantalapiedra | Cantayano (2024) · stock 6
-  0.94 −1  "Domaine Pernot Belicard, Puligny-Montrachet 1er Cru Les Pucelles 2022 - Chardonnay"
+  1.00 −1  "Domaine Roulot Mersault Vieruilles"
+        → Domaine Roulot | Mersault Vieruilles (2023) · stock 2
+  0.94 −2  "Domaine Pernot Belicard, Puligny-Montrachet 1er Cru Les Pucelles 2022 - Chardonnay"
         → Domaine Pernot Belicard | Puligny-Mont. 1er Cru Les Pucelles (2022) · stock 10
+  0.92 −1  "Krug Grande Cuvée 172ème Édition - Brut"
+        → Krug | Grande Cuvée 172ème (NV) · stock 2
+  0.91 −2  "Forjas del Salnes Leirana 2023 - Albariño (D.O. Rias Baixas)"
+        → Forjas del Salnés | Leirana Albariño (2022) · stock 12
+  0.90 −1  "Antoine Jobard 2024 Mersault Blagny"
+        → Antoine Jobard | Mersault (NV) · stock 7
   0.89 −2  "Ossian Viñas Viejas 2023 - Verdejo (D.O. Castilla y León)"
         → Ossian | Viñas Viejas Verdejo (2023) · stock 2
+  0.89 −3  "Rafael Palacios As Sortes 2023 - Godello (D.O. Valdeorras)"
+        → Rafael Palacios | As Sortes (2022) · stock 3
+  0.85 −2  "Xosé Lois Sebio Salvaxe 2024 - Albariño, Treixadura, Godello, Verdello (D.O. Ribeiro)"
+        → Xosè Lois Sebio | Salvaxe (2024) · stock 4
   0.80 −1  "Domaine Comte Lafon Mersault 1er Cru Charmes"
         → Domaine des Comtes Lafon | Meursault 1er Cru Charmes (2023) · stock 2
+  0.80 −1  "Thibault Liger Charmes Chambertin 2022"
+        → Thibault Liger Belair | Charmes Chambertin (2022) · stock 1
 
 ── SUGERENCIAS (confirmar de un toque) ──
 
 ── VENTA POR COPAS (no descuenta botella entera) ──
+  2 × "COPA SANGARIDA GODELLO" (24 €)
   1 × "COPA DEL DIA" (20 €)
+  1 × "COPA CHAMPAGNE CHARLES H." (21 €)
   9 × "EXCELLENCE ROSADO COPA" (117 €)
 
 ── SIN CASAR (primeras 25) ──
+  1 × "OSTRAS BLOODY MARY"
   3 × "OSTRA CHICHARRON"
-  4 × "GILDAS PESCADO AZUL"
-  2 × "ENSALADILLA CON VENTRESCA"
-  7 × "TARTAR DE TOMATE"
-  2 × "DADOS DE MERLUZA"
-  5 × "BUÑUELOS BOGAVANTE"
-  6 × "CALAMAR ANDALUZA"
-  1 × "GAMBA AJILLO"
-  3 × "ESPARDEÑA AJILLO"
-  1 × "ALMEJAS BRASA"
-  7 × "PATATAS FRITAS"
-  6 × "LECHUGA FRESCA"
-  13 × "TOMATES ALIÑADOS"
-  6 × "PIMIENTOS DEL PADRON"
-  2 × "CHEESECAKE FLAO"
-  3 × "ARROZ CON LECHE"
-  4 × "BLOODY MARY"
-  1 × "APEROL SPRITZ"
-  14 × "ESPRESSO"
-  2 × "CAFE CORTADO"
-  3 × "CAFE AMERICANO"
-  1 × "CAFE CAPUCCINO"
-  3 × "ICED COFFEE"
-  1 × "ICED LATTE"
-  1 × "TE VERDE"
+  5 × "CECINA DE WAGYU"
+  19 × "GILDAS PESCADO AZUL"
+  7 × "ENSALADILLA CON VENTRESCA"
+  14 × "TARTAR DE TOMATE"
+  7 × "DADOS DE MERLUZA"
+  9.5 × "BUÑUELOS BOGAVANTE"
+  12 × "CALAMAR ANDALUZA"
+  5 × "GAMBA AJILLO"
+  5 × "ESPARDEÑA AJILLO"
+  4 × "ALMEJAS BRASA"
+  18 × "PATATAS FRITAS"
+  9 × "LECHUGA FRESCA"
+  18 × "TOMATES ALIÑADOS"
+  13 × "PIMIENTOS DEL PADRON"
+  7 × "CHEESECAKE FLAO"
+  6.5 × "ARROZ CON LECHE"
+  10 × "BLOODY MARY"
+  3 × "APEROL SPRITZ"
+  1 × "CAMPARI SPRITZ"
+  1 × "PALOMA"
+  1 × "VIRGIN MARY"
+  19 × "ESPRESSO"
+  1 × "CAFE SOLO"
