@@ -5,6 +5,51 @@
 //   POST /ErpCloud/report/query  ·  cabecera x-auth-token
 //   el cuerpo lleva la fecha en filters[0].dateValue y en dateReference
 
+import crypto from "crypto";
+
+/** Cifrado que usa su propio front antes de enviar las credenciales:
+ *  AES-128-CBC con clave e IV fijos, salida en base64. */
+const CLAVE_HIOPOS = "B1B2B3B4B5B6B7B8";
+function cifrar(texto: string): string {
+  const c = crypto.createCipheriv(
+    "aes-128-cbc",
+    Buffer.from(CLAVE_HIOPOS),
+    Buffer.from(CLAVE_HIOPOS)
+  );
+  return Buffer.concat([c.update(texto, "utf8"), c.final()]).toString("base64");
+}
+
+/** Inicia sesión y devuelve un x-auth-token nuevo.
+ *  GET /ErpCloud/session/login — el token viene en la cabecera de respuesta. */
+export async function login(): Promise<string> {
+  const user = process.env.HIOPOS_USER;
+  const password = process.env.HIOPOS_PASSWORD;
+  const customerId = process.env.HIOPOS_CUSTOMER;
+  const host = process.env.HIOPOS_HOST;
+  if (!user || !password || !customerId || !host) {
+    throw new Error(
+      "Faltan HIOPOS_USER, HIOPOS_PASSWORD, HIOPOS_CUSTOMER o HIOPOS_HOST"
+    );
+  }
+
+  const params = new URLSearchParams({
+    user: cifrar(user),
+    password: cifrar(password),
+    customerId,
+    languageIsoCode: "ES",
+    isAnalytics: "true",
+    encrypted: "true",
+  });
+  const r = await fetch(`${host}/ErpCloud/session/login?${params}`, {
+    headers: { "Content-Type": "application/json" },
+  });
+  const token = r.headers.get("x-auth-token");
+  if (!r.ok || !token) {
+    throw new Error(`Login de HioPOS falló (${r.status}): ${(await r.text()).slice(0, 150)}`);
+  }
+  return token;
+}
+
 export type ArticuloVendido = {
   codigo: number; // código interno del artículo en el TPV (enlace estable)
   nombre: string;
@@ -183,16 +228,10 @@ function cuerpo(fecha: string, limite: number) {
 /** Solo para depurar: expone el cuerpo que se envía */
 export const cuerpoDebug = cuerpo;
 
-/** Ventas por artículo de un día. Lanza si el token ha caducado. */
-export async function ventasDelDia(
-  fecha: string,
-  opciones: { token?: string; limite?: number } = {}
-): Promise<ArticuloVendido[]> {
-  const token = opciones.token ?? process.env.HIOPOS_TOKEN;
+async function pedirInforme(fecha: string, token: string, limite: number) {
   const url = process.env.HIOPOS_URL;
-  if (!token || !url) throw new Error("Faltan HIOPOS_TOKEN o HIOPOS_URL");
-
-  const resp = await fetch(url, {
+  if (!url) throw new Error("Falta HIOPOS_URL");
+  return fetch(url, {
     method: "POST",
     headers: {
       accept: "application/json, text/plain, */*",
@@ -201,12 +240,28 @@ export async function ventasDelDia(
       origin: new URL(url).origin,
       referer: `${new URL(url).origin}/icgfront/analytics`,
     },
-    body: JSON.stringify(cuerpo(fecha, opciones.limite ?? 500)),
+    body: JSON.stringify(cuerpo(fecha, limite)),
   });
+}
+
+/** Ventas por artículo de un día.
+ *  Si el token guardado ha caducado, inicia sesión y reintenta una vez. */
+export async function ventasDelDia(
+  fecha: string,
+  opciones: { token?: string; limite?: number } = {}
+): Promise<ArticuloVendido[]> {
+  const limite = opciones.limite ?? 500;
+  let token = opciones.token ?? process.env.HIOPOS_TOKEN ?? "";
+
+  let resp = token
+    ? await pedirInforme(fecha, token, limite)
+    : new Response(null, { status: 401 });
 
   if (resp.status === 401 || resp.status === 403) {
-    throw new Error("HIOPOS_TOKEN caducado o sin permisos");
+    token = await login();
+    resp = await pedirInforme(fecha, token, limite);
   }
+
   if (!resp.ok) {
     throw new Error(`HioPOS respondió ${resp.status}: ${(await resp.text()).slice(0, 200)}`);
   }
