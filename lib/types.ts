@@ -54,16 +54,26 @@ export type ResultadoDocumento = {
   }[];
   /** Documentos de tipo carta: ids casados con certeza (el resto, fuera) */
   carta_ids?: number[];
-  /** Líneas de la carta con un candidato probable, a confirmar por el equipo */
+  /** Líneas con un candidato probable, a confirmar por el equipo
+   *  (carta y cierres de caja del TPV) */
   carta_sugerencias?: {
     texto: string;
     vino_id: number;
     etiqueta: string;
     score: number;
     precio: number | null;
+    /** cierres de caja: unidades vendidas de esa línea */
+    qty?: number;
   }[];
-  /** Líneas de la carta sin candidato: se resuelven buscando a mano */
-  carta_sin_casar?: { texto: string; precio: number | null; nota?: string }[];
+  /** Líneas sin candidato: se resuelven buscando a mano */
+  carta_sin_casar?: {
+    texto: string;
+    precio: number | null;
+    nota?: string;
+    qty?: number;
+  }[];
+  /** Cierres de TPV: movimientos casados con certeza, con su texto de origen */
+  tpv_items?: { vino_id: number; qty: number; texto: string }[];
   /** Detalle de lo casado automáticamente (para aplicar precios y alias) */
   carta_items?: { vino_id: number; precio: number | null; texto: string }[];
   /** Referencias que el inventario sugiere retirar del catálogo */

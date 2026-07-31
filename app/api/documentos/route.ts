@@ -7,6 +7,7 @@ import {
   promptExtraerCarta,
 } from "@/lib/carta";
 import { emparejar, parsearInventario, type FilaExcel } from "@/lib/excel";
+import { parsearVentasTpv, type VentaTpv } from "@/lib/tpv";
 import { createClient } from "@/lib/supabase/server";
 import { promptAlbaranCierre, promptExcel } from "@/lib/prompts";
 import type { ResultadoDocumento, TipoVino, Vino } from "@/lib/types";
@@ -20,6 +21,9 @@ const TIPOS_VINO: TipoVino[] = ["Espumoso", "Blanco", "Rosado", "Tinto", "Dulce"
 // entre 0.55 y 0.80 se pide confirmación de un toque.
 const UMBRAL_AUTO = 0.8;
 const UMBRAL_SUGERENCIA = 0.55;
+
+/** Cliente de Supabase con la sesión del usuario (solo lo que se usa aquí) */
+type SupabaseLike = Awaited<ReturnType<typeof createClient>>;
 
 type ContentPart =
   | { type: "text"; text: string }
@@ -352,6 +356,97 @@ REGLAS:
   return { resultado, modelo };
 }
 
+/** Casa las líneas de un informe de ventas del TPV con el catálogo.
+ *  Mismo esquema de tres tramos que la carta: automático / sugerencia / manual. */
+async function casarVentasTpv(
+  ventas: VentaTpv[],
+  vinos: Vino[],
+  supabase: SupabaseLike
+): Promise<ResultadoDocumento> {
+  const resultado: ResultadoDocumento = {
+    proveedor_o_fecha: `Ventas del TPV · ${ventas.length} artículos`,
+    movimientos: [],
+    precios: [],
+    nuevas_referencias: [],
+    no_encontrados: [],
+    bajas_sugeridas: [],
+    carta_sugerencias: [],
+    tpv_items: [],
+    preview: [],
+  };
+
+  // Nombres ya confirmados en cierres o cartas anteriores
+  const { data: aliasRows } = await supabase
+    .from("alias_carta")
+    .select("texto_norm, vino_id");
+  const alias = new Map(
+    (aliasRows ?? []).map((a: { texto_norm: string; vino_id: number }) => [
+      a.texto_norm,
+      a.vino_id,
+    ])
+  );
+  const porId = new Map(vinos.map((v) => [v.id, v]));
+
+  const pendientes: VentaTpv[] = [];
+  for (const v of ventas) {
+    const id = alias.get(v.texto.toLowerCase().trim());
+    const vino = id ? porId.get(id) : undefined;
+    if (vino) {
+      resultado.tpv_items!.push({ vino_id: vino.id, qty: -v.unidades, texto: v.texto });
+    } else {
+      pendientes.push(v);
+    }
+  }
+
+  const { casados, sinCasar } = emparejarCarta(
+    pendientes.map((v) => ({ texto: v.texto })),
+    vinos,
+    UMBRAL_SUGERENCIA
+  );
+  const unidadesDe = (texto: string) =>
+    pendientes.find((p) => p.texto === texto)?.unidades ?? 0;
+
+  for (const c of casados) {
+    const qty = unidadesDe(c.linea.texto);
+    if (c.score >= UMBRAL_AUTO) {
+      resultado.tpv_items!.push({
+        vino_id: c.vino.id,
+        qty: -qty,
+        texto: c.linea.texto,
+      });
+    } else {
+      resultado.carta_sugerencias!.push({
+        texto: c.linea.texto,
+        vino_id: c.vino.id,
+        etiqueta: `${c.vino.bodega} — ${c.vino.nombre}${c.vino.anio ? ` (${c.vino.anio})` : ""}`,
+        score: Math.round(c.score * 100) / 100,
+        precio: null,
+        qty,
+      });
+    }
+  }
+
+  // Lo que no casa suele ser comida y bebida que no es vino: solo se listan
+  // las líneas que podrían ser vino para no ensuciar la revisión
+  resultado.carta_sin_casar = sinCasar.map((l) => ({
+    texto: l.texto,
+    precio: null,
+    qty: unidadesDe(l.texto),
+  }));
+
+  for (const it of resultado.tpv_items!) {
+    const w = porId.get(it.vino_id)!;
+    resultado.preview!.push({
+      vino_id: w.id,
+      etiqueta: `${w.bodega} — ${w.nombre}${w.anio ? ` (${w.anio})` : ""}`,
+      detalle: `"${it.texto}" · quedan ${Math.max(0, w.stock + it.qty)} de ${w.stock}`,
+      qty: `−${Math.abs(it.qty)}`,
+      direccion: "minus",
+    });
+  }
+  return resultado;
+}
+
 function parseJsonIA(raw: string): Record<string, unknown> {
   const limpio = raw
     .trim()
@@ -463,6 +558,16 @@ export async function POST(req: NextRequest) {
         const det = await importarExcelDeterminista(inv, vinos, multiplicadorPrecio);
         resultadoFinal = det.resultado;
         modeloFinal = det.modelo;
+      }
+    }
+
+    // Informe de ventas del TPV (HioPOS Analytics → "Por artículos" → Excel):
+    // tabular y exacto, se parsea y casa en código sin pasar por la IA
+    if (tipo === "cierre" && esHojaCalculo) {
+      const informe = parsearVentasTpv(buffer, nombreLower.endsWith(".csv"));
+      if (informe && informe.ventas.length) {
+        resultadoFinal = await casarVentasTpv(informe.ventas, vinos, supabase);
+        modeloFinal = `TPV · hoja "${informe.hoja}" · casado en código`;
       }
     }
 

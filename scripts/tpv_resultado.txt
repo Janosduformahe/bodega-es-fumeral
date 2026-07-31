@@ -1,0 +1,30 @@
+parseo OK · hoja "Por artículos" · 10 artículos con ventas
+   146 × APERITIVO (639 €)
+   66 × AGUA (448 €)
+   28 × COCA COLA ZERO (137.5 €)
+   3 × Zarate (150 €)
+   2 × Ossian Viñas Viejas (150 €)
+   1 × Oxer Wines Suzzane (95 €)
+   4 × Levante 32 (280 €)
+   2 × Do Ferreiro Albariño (100 €)
+   1 × Recaredo Terrers (55 €)
+   3 × Chateau Saint Maur Excellence (270 €)
+
+══ CASADO ══
+  automáticos: 7 · sugerencias: 0 · sin casar: 3
+
+── AUTOMÁTICOS (se descuentan solos) ──
+  1.00 −3 "Zarate" → Zarate | Zarate (stock 23)
+  1.00 −2 "Ossian Viñas Viejas" → Ossian | Viñas Viejas, Verdaejo ossain (stock 2)
+  1.00 −1 "Oxer Wines Suzzane" → Oxer Wines | Suzzane (stock 6)
+  1.00 −4 "Levante 32" → Rosado 32 | Levante 32 (stock 25)
+  1.00 −2 "Do Ferreiro Albariño" → Do Ferreiro | Ferreiro Albariño (stock 7)
+  1.00 −1 "Recaredo Terrers" → Recaredo | Terrers Brut Nature (stock 12)
+  1.00 −3 "Chateau Saint Maur Excellence" → Chateau Saint Maur | Excellence (stock 26)
+
+── SUGERENCIAS (confirmar) ──
+
+── SIN CASAR (comida/bebida o nombres nuevos) ──
+  "APERITIVO"
+  "AGUA"
+  "COCA COLA ZERO"

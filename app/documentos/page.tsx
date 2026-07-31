@@ -164,7 +164,7 @@ export default function DocumentosPage() {
         fileName: file.name,
         tipo: docType,
       });
-      if (docType === "carta" && !catalogo.length) {
+      if ((docType === "carta" || docType === "cierre") && !catalogo.length) {
         const { data: vs } = await supabase
           .from("vinos")
           .select("id, bodega, nombre, anio, precio, stock")
@@ -195,6 +195,45 @@ export default function DocumentosPage() {
       fileRef.current.value = "";
       fileRef.current.click();
     }
+  }
+
+  /** Lista final de un cierre de TPV: casados + sugerencias + manuales */
+  function itemsTpv() {
+    const r = pending!.resultado;
+    const items = [...(r.tpv_items ?? [])];
+    (r.carta_sugerencias ?? []).forEach((s, i) => {
+      if (sugOk.has(i))
+        items.push({ vino_id: s.vino_id, qty: -(s.qty ?? 0), texto: s.texto });
+    });
+    for (const [texto, v] of manual) {
+      const linea = (r.carta_sin_casar ?? []).find((x) => x.texto === texto);
+      items.push({ vino_id: v.id, qty: -(linea?.qty ?? 0), texto });
+    }
+    return items.filter((i) => i.qty !== 0);
+  }
+
+  async function aplicarTpv() {
+    if (!pending) return;
+    const items = itemsTpv();
+    const bot = items.reduce((s, i) => s + Math.abs(i.qty), 0);
+    if (!confirm(`Se descontarán ${bot} botellas de ${items.length} referencias.\n\n¿Aplicar?`))
+      return;
+    setApplying(true);
+    const { data, error } = await supabase.rpc("aplicar_movimientos", {
+      p_documento_id: pending.documento_id,
+      p_items: items,
+    });
+    setApplying(false);
+    if (error) {
+      setError("Error al aplicar: " + error.message);
+      return;
+    }
+    const res = data as { movimientos_aplicados: number; alias_guardados: number };
+    alert(
+      `✓ ${res.movimientos_aplicados} movimientos aplicados.\n${res.alias_guardados} nombres del TPV recordados para el próximo cierre.`
+    );
+    setPending(null);
+    loadHistory();
   }
 
   /** Lista final de la carta: casadas + sugerencias aceptadas + manuales */
@@ -247,9 +286,12 @@ export default function DocumentosPage() {
     loadHistory();
   }
 
+  const esTpv = () => !!pending?.resultado.tpv_items;
+
   async function aplicar() {
     if (!pending) return;
     if (pending.tipo === "carta") return aplicarCarta();
+    if (esTpv()) return aplicarTpv();
     setApplying(true);
     const { data, error } = await supabase.rpc("aplicar_documento", {
       p_documento_id: pending.documento_id,
@@ -478,7 +520,7 @@ export default function DocumentosPage() {
                 );
               })}
             </div>
-            {pending.tipo === "carta" && (
+            {(pending.tipo === "carta" || esTpv()) && (
               <>
                 {(r.carta_sugerencias ?? []).length > 0 && (
                   <div className="rev-sec">
@@ -568,14 +610,25 @@ export default function DocumentosPage() {
                   </div>
                 )}
 
-                <div className="rev-resumen">
-                  <strong>{itemsCarta().length}</strong> referencias quedarán{" "}
-                  <strong>en carta</strong> ·{" "}
-                  <strong>
-                    {Math.max(0, catalogo.length - itemsCarta().length)}
-                  </strong>{" "}
-                  fuera de carta (siguen en la bodega, no se toca el stock)
-                </div>
+                {esTpv() ? (
+                  <div className="rev-resumen">
+                    Se descontarán{" "}
+                    <strong>
+                      {itemsTpv().reduce((s, i) => s + Math.abs(i.qty), 0)} botellas
+                    </strong>{" "}
+                    de <strong>{itemsTpv().length}</strong> referencias. Lo que no
+                    casa suele ser comida o bebida que no es vino: puedes ignorarlo.
+                  </div>
+                ) : (
+                  <div className="rev-resumen">
+                    <strong>{itemsCarta().length}</strong> referencias quedarán{" "}
+                    <strong>en carta</strong> ·{" "}
+                    <strong>
+                      {Math.max(0, catalogo.length - itemsCarta().length)}
+                    </strong>{" "}
+                    fuera de carta (siguen en la bodega, no se toca el stock)
+                  </div>
+                )}
               </>
             )}
 
@@ -650,14 +703,18 @@ export default function DocumentosPage() {
                   applying ||
                   (pending.tipo === "carta"
                     ? itemsCarta().length === 0
-                    : nMovs + nNuevas === 0)
+                    : esTpv()
+                      ? itemsTpv().length === 0
+                      : nMovs + nNuevas === 0)
                 }
               >
                 {applying
                   ? "Aplicando…"
                   : pending.tipo === "carta"
                     ? "Aplicar la carta"
-                    : "Aplicar al inventario"}
+                    : esTpv()
+                      ? "Descontar las ventas"
+                      : "Aplicar al inventario"}
               </button>
             </div>
           </div>
