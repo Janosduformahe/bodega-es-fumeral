@@ -1,0 +1,227 @@
+sesión abierta
+
+═══ VENTAS 2026-01-01 → 2026-07-31 ═══
+800 artículos distintos vendidos
+72.178,2 unidades · 1.330.149 €
+
+catálogo: 428 referencias activas
+
+═══ CASADO ═══
+  automáticos : 193 referencias · 1184 botellas · 122.875 €
+  sugerencias : 43 referencias · 210 botellas
+  sin casar   : 556 artículos
+  por copas   : 8 referencias · 924 copas
+
+── TOP 25 VINOS CASADOS (por facturación) ──
+    77 bot ·   6750 € · 0.82 · "Chateau Saint Maur Excellence 2022 - Garnacha Tinta, Syrah, Cinsault, Monastrell (A.O.C. Provence)"
+         → Chateau Saint Maur | Excellence
+    27 bot ·   5874 € · 1.00 · "Billecart-Salmon Rosé - Brut"
+         → Billecart-Salmon | Rosé Brut
+    35 bot ·   3881 € · 0.86 · "Suertes del Marqués Vidonia 2024 - Listan Blanco (D.O. Islas Canarias)"
+         → Suertes del Marqués | Vidonia
+    44 bot ·   3150 € · 0.89 · "Ossian Viñas Viejas 2023 - Verdejo (D.O. Castilla y León)"
+         → Ossian | Viñas Viejas Verdejo
+    10 bot ·   2480 € · 0.80 · "Jobard Morey Meursault - Les Narvaux 2022"
+         → Jobard-Morey | Meursault 1er Cru Les Narvaux
+     3 bot ·   2450 € · 1.00 · "Domaine Roulot Mersault Vieruilles"
+         → Domaine Roulot | Mersault Vieruilles
+     7 bot ·   2275 € · 0.94 · "Comtesse de Chérisey, Puligny-Montrachet, 1er Cru Les Chaluamaux 2021 - Chardonnay"
+         → Comtesse de Chérisey | Puligny-Mont. 1er Cru Les Chaluamaux
+    21 bot ·   2200 € · 0.89 · "Xosé Lois Sebio As Viñas 2023 - Albariño, Treixadura (D.O. Ribeiro)"
+         → Xosè Lois Sebio | As Viñas
+    15 bot ·   2100 € · 0.89 · "Rafael Palacios As Sortes 2023 - Godello (D.O. Valdeorras)"
+         → Rafael Palacios | As Sortes
+    30 bot ·   1950 € · 0.85 · "Xosé Lois Sebio Salvaxe 2024 - Albariño, Treixadura, Godello, Verdello (D.O. Ribeiro)"
+         → Xosè Lois Sebio | Salvaxe
+     5 bot ·   1900 € · 0.92 · "Krug Grande Cuvée 172ème Édition - Brut"
+         → Krug | Grande Cuvée 172ème
+   185 bot ·   1892 € · 1.00 · "Cantayano"
+         → M. Cantalapiedra | Cantayano
+     9 bot ·   1800 € · 0.84 · "Chateau Saint Maur Excellence 2022 Magnum 150cl - Garnacha Tinta, Syrah, Cinsault, Monastrell (A.O.C"
+         → Chateau Saint Maur | Excellence Magnum
+    12 bot ·   1675 € · 0.90 · "Adrien Dhondt-Grellet Les Terres Fines 1er Cru Blanc de Blancs - Extra Brut"
+         → Adrien Dhondt-Grellet | Les Terres Fines 1er Cru
+     7 bot ·   1610 € · 0.89 · "Oxer Bastegieta Kalamity Blanco 2024 - Viura (D.O. Rioja)"
+         → Oxer Bastegieta | Kalamity Blanco
+    29 bot ·   1579 € · 0.95 · "Recaredo Terrers 2019 - Brut Nature"
+         → Recaredo | Terrers Brut Nature
+     3 bot ·   1570 € · 0.80 · "Domaine Comte Lafon Mersault 1er Cru Charmes"
+         → Domaine des Comtes Lafon | Meursault 1er Cru Charmes
+    15 bot ·   1560 € · 0.94 · "Bérêche & Fils Brut Réserve - Brut"
+         → Bérêche & Fils | Brut Réserve
+    31 bot ·   1550 € · 0.89 · "Damp Frères Chablis Vieilles Vignes 2023 - Chardonnay (A.O.C. Chablis)"
+         → Damp Frères | Chablis Vieilles Vignes
+     4 bot ·   1520 € · 0.94 · "Xavier Monnot, Puligny-Montrachet, 1er Cru Les Folatières 2022 - Chardonnay"
+         → Xavier Monnot | Puligny-Mont. 1er Cru Les Folatières
+    29 bot ·   1450 € · 0.91 · "Forjas del Salnes Leirana 2023 - Albariño (D.O. Rias Baixas)"
+         → Forjas del Salnés | Leirana Albariño
+     1 bot ·   1450 € · 0.90 · "Baron Thénard, Montrachet 2019 - Chardonnay"
+         → Baron Thénard | Montrachet
+     6 bot ·   1400 € · 0.94 · "Domaine Pernot Belicard, Puligny-Montrachet 1er Cru Les Pucelles 2022 - Chardonnay"
+         → Domaine Pernot Belicard | Puligny-Mont. 1er Cru Les Pucelles
+     3 bot ·   1390 € · 0.88 · "Domaine Leflaive Puligny-Montrachet Village 2023 - Chardonnay"
+         → Domaine Leflaive | Puligny-Montrachet
+     8 bot ·   1310 € · 0.88 · "Marques de Murrieta Capellanía 2017 - Viura (D.O. Rioja)"
+         → Marques de Murrieta | Capellanía
+
+── SUGERENCIAS (revisar) ──
+  0.69 40 bot "Do Ferreiro 2023 - Albariño (D.O. Rias Baixas)"
+         ≈ Do Ferreiro | Ferreiro Albariño
+  0.63 20 bot "CHATEAU SAINT MAUR EXCELENCE 2023"
+         ≈ Chateau Saint Maur | L'Excellence
+  0.65 2 bot "Domaine Prieuré-Roch Vosne-Romanée 1er Cru Les Suchots 2021 - Pinot Noir"
+         ≈ Domaine Pierre Roch | Vosne-Romanée
+  0.68 8 bot "Rosado 32 Levante 2022 Magnum 150cl - Cinsault, Ugni blanc, Syrah, Grenache (A.O.C. Provence)"
+         ≈ Rosado 32 | Levante 32 Magnum
+  0.63 3 bot "Benoit Ente Puligny 2023"
+         ≈ Benoit Ente | Mathilde
+  0.76 4 bot "Jean-Marc Pillot, Chassagne Montrachet 1er Cru Les Vergers 2022 - Chardonnay"
+         ≈ Marc Morey et Fils | Chassagne-Mont. 1er Cru Les Vergers
+  0.60 12 bot "Chateau de Pibarnon 2022 - Monastrell, Cinsault (A.O.C. Bandol)"
+         ≈ Chateau de Pibarnon | De Pibarnon Bandol
+  0.66 8 bot "Clos Cibonne Cuvee Prestige Carolin 2021 - Tibouren (A.O.C. Provence)"
+         ≈ Clos Cibonne | Tibouren Cru Classe
+  0.77 6 bot "'Frédéric Savart L''Ouverture Blanc de Noirs - Brut'"
+         ≈ Frédéric Savart | L'Ouverture Blanc de Noirs
+  0.56 2 bot "Nicole Lamarche Echézeaux Grand Cru 2021 - Pinot Noir (A.O.C. Echézeaux)"
+         ≈ Nicole Lamarche | Echezaux
+  0.60 1 bot "Thibault Liger Charmes Chambertin 2022"
+         ≈ Thibault Liger Belair | Aux charmes
+  0.63 7 bot "2021 69 arrobas  Xurxo"
+         ≈ Albamar | 69 Arrobas
+  0.73 2 bot "Comtesse de Cherissey, Mersault Bois De Blagny 2022 - Chardonnay (A.O.C. Meursault)"
+         ≈ Comtesse de Chérisey | Meursault Bois de Blagny
+  0.67 45 bot "tinto vera vides"
+         ≈ Pablo Arnaz y Andrea Sanz | Vera Vides
+  0.77 5 bot "2022 Clau de Nell Anne Claude Leflavie"
+         ≈ Anne Claude Leflaive | Clau de Nell
+  0.58 2 bot "Philippe Pacalet, Meursault 2022 - Chardonnay (A.O.C. Meursault)"
+         ≈ Philippe Pacalet | Pommard
+  0.67 3 bot "'Paul Déthune Cuvée à l''Ancienne Grand Cru 2014 - Brut'"
+         ≈ Paul Déthune | Grand Cru Brut
+  0.60 7 bot "Ibizkus Totem 2023 - Xarelo (D.O. Ibiza)"
+         ≈ Ibizkus | Totem Blanco
+  0.63 2 bot "Fleurot-Larose, Chassagne-Montrachet Abbaye de Morgeot 2021 - Chardonnay"
+         ≈ Fleurot-Larose | Chassagne-Mont. Clos de la Rocquemaure
+  0.69 2 bot "Oxer Bastegieta Kalamity 2022 - Tempranillo (D.O. Toro)"
+         ≈ Oxer Bastegieta | Kalamity Tinto
+  0.67 2 bot "2021 Kalamity Oxer Wines"
+         ≈ Oxer Wines | Kalamity tinto
+  0.71 1 bot "'Clos Rougeard ''Les Clos'' 2015 - Cabernet Franc (A.O.C. Saumur-Champigny)'"
+         ≈ Clos Rougeard | Les Poyeux Saumur-Champigny
+  0.77 1 bot "Domain Comte Lafon Mersault Clos de la Barre"
+         ≈ Domaine des Comtes Lafon | Meursault Clos de la Barre
+  0.75 1 bot "Michel Juillot Corton Perriers"
+         ≈ Domaine Michel Juillot | Corton Perrieres
+  0.57 2 bot "Remelluri Blanco 2022 - Garnacha Blanca, Chardonnay (D.O. Rioja)"
+         ≈ Remelluri | Remelluri Blanco
+  0.71 1 bot "Domaine Jobard Morey Mersault 1er Cru Charmes"
+         ≈ Jobard Morey | Meursault Charmes
+  0.71 2 bot "2019  Mirando al Sur O. Riviere"
+         ≈ O.Riviere | Mirado al sur
+  0.67 2 bot "Toni Just Wallufer Kabinett 1997 - Riesling (Alemania)"
+         ≈ Toni Jost | Wallufer Kabinett
+  0.67 3 bot "Otazo Pago de Otazu"
+         ≈ Pago Otazu | Otazu
+  0.75 1 bot "2020 Les Charmes Jean Monnier"
+         ≈ Jean Monnier | Meursault 1er Cru Les Charmes
+  0.67 1 bot "J.M.BOUZERAU MEURSAULT LES NARVAUX"
+         ≈ Hubert Bouzerau | Meursault 1er Cru Charmes
+  0.63 1 bot "AGRAPART ET FILS TERROIRS BLANC DE BLANC"
+         ≈ Christoffe | Blanc de Blancs
+  0.69 1 bot "Gros Ch & Fils, Nuits-Saint Georges Tribourgs 2020 - Pinot Noir (A.O.C. Nuits-Saint-Georges)"
+         ≈ Gros Ch & Fils | Nuits saint Georges Triboung
+  0.75 1 bot "DOMAINE RAOUL, GAUTHERIN & FILS VAUDESIR 2022"
+         ≈ Raoul Gautherin & Fils | Grand Cru Vaudésirs
+  0.64 1 bot "Domaine Jean Collet & Fils Grand Cru Valmur 2021 - Chardonnay (A.O.C. Chablis)"
+         ≈ Jean Collet & Fills | Chablis Grand Cru Les Clos
+  0.67 1 bot "M.Cantalapiedra Espejo La Seca 2023 - Verdejo (D.O. Castilla y León)"
+         ≈ Canta la piedra | Espejo La Seca
+  0.58 1 bot "Domaine Sylvain Debord Rully 2022 - Chardonnay (A.O.C. Rully)"
+         ≈ Domaine Sylvain Debord | Macon
+  0.75 1 bot "Cati Ribot Son Llebre"
+         ≈ Galmes y Ribot | Son Llebre
+  0.66 1 bot "Ollieux Romanis, Atal Sia 2018 - Pinot Noir (A.O.C. Languedoc)"
+         ≈ Ollieux Romains | Atal Sia
+  0.67 1 bot "FX SIERRA DE CANTABRIA"
+         ≈ XF Sierra de Cantabria | XF Sierra Cantabria
+  0.67 1 bot "'Jon D''Anguera L''Hostal Darnos 2021 - Garnacha (D.O. Monstant)'"
+         ≈ Joan D'Anguera | L'Hostal Darnos
+  0.69 1 bot "Lise & Bertrand Jousset Premier Rendez Vous"
+         ≈ Vin du France | Premier Rendez Vous
+  0.56 1 bot "François de Nicolay, Ladoix Sur Les Vris 2018 - Chardonnay (A.O.C. Ladoix)"
+         ≈ François de Nicolay | Bouzereau
+
+── SIN CASAR con facturación alta (posibles vinos) ──
+   782 ×  48746 €  "KATSUSANDO"
+   782 ×  48746 €  "KATSUSANDO"
+  10467 ×  45604 €  "APERITIVO"
+  816.5 ×  37116 €  "FIDEUÁ MERO"
+  1035 ×  31617 €  "SASHIMI VENTRESCA"
+   245 ×  28036 €  "Wagyu 400 gr"
+  880.5 ×  26910 €  "BUÑUELOS BOGAVANTE"
+  3883 ×  26179 €  "AGUA"
+  974.5 ×  24882 €  "CALAMAR ANDALUZA"
+   521 ×  24350 €  "STEAK TARTAR WAGYU"
+  70.185 ×  21796 €  "GAMBA ROJA BRASA"
+   571 ×  21143 €  "POLLO MARINADO"
+   991 ×  20389 €  "TARTAR DE TOMATE"
+  899.5 ×  20293 €  "ENSALADILLA CON VENTRESCA"
+   762 ×  19975 €  "CEVICHE SIRVIA CON CHICHARRON"
+  1694 ×  19602 €  "PATATAS FRITAS"
+   729 ×  18177 €  "MEJILLONES CHILLI CRAB"
+  1480 ×  16948 €  "GILDAS PESCADO AZUL"
+  2385 ×  15736 €  "Agua gas"
+  595.2 ×  15278 €  "MATRIMONIO BOQUERON ANCHOA"
+   242 ×  15011 €  "VENTRESCA  BRASA A LA PIMIENTA"
+  2588 ×  14145 €  "CAÑA"
+  1037 ×  13667 €  "TOMATES ALIÑADOS"
+  86.55 ×  13553 €  "LUBINA (seabass)"
+   637 ×  11630 €  "TARTAR DE BERENJENA"
+  759.5 ×  11586 €  "BONIATO ASADO SOBRASADA"
+  468.5 ×  11181 €  "DADOS DE MERLUZA"
+  128.4 ×  10934 €  "LANGOSTA AJILLO"
+  476.73 ×  10531 €  "GAMBA BLANCA HUELVA"
+  716.75 ×  10403 €  "ARROZ CON LECHE"
+    51 ×   9409 €  "RODABALLO (turbot)"
+  58.4 ×   9116 €  "GALLO (John dory)"
+  114.12 ×   8899 €  "CIGALA TRONCO 0,25 KG"
+   290 ×   8656 €  "GAMBA AJILLO"
+   210 ×   8539 €  "ALMEJAS BRASA"
+   375 ×   8485 €  "CECINA DE WAGYU"
+   199 ×   8455 €  "ALMEJA PUTANESCA"
+   348 ×   8066 €  "SASHIMI SIRVIA"
+  156.38 ×   7973 €  "VARIOS COMIDA"
+   358 ×   7737 €  "RUBIA GALLEGA"
+   781 ×   7617 €  "LECHUGA FRESCA"
+    50 ×   7571 €  "LUBINA 1,2 KG"
+   839 ×   7147 €  "OSTRAS AL NATURAL"
+   355 ×   6643 €  "SALPICÓN RAYA"
+  377.5 ×   6593 €  "ENSALADA PAYESA"
+   613 ×   6592 €  "OSTRAS BLOODY MARY"
+   164 ×   6434 €  "ESPARDEÑA AJILLO"
+  93.3 ×   6403 €  "CIGALA TRONCO 0,225KG"
+    37 ×   6202 €  "LENGUADO 1,3 KG"
+  756.65 ×   5684 €  "Bombones"
+  39.9 ×   5620 €  "ROTJA (scorpion fish)"
+   235 ×   5390 €  "TORTILLA VAGA"
+  687.5 ×   5388 €  "PIMIENTOS DEL PADRON"
+  1082 ×   5364 €  "COCA COLA ZERO"
+  36.4 ×   5320 €  "LENGUADO (sole)"
+   209 ×   4939 €  "MEJILLONES VAPOR"
+    36 ×   4890 €  "O. Riviere Mirando al Sur 2019 - Viura (D.O. Rioja)"
+   459 ×   4769 €  "GANACHE CHOCO"
+    29 ×   4681 €  "GALLO 1,3 KG"
+   313 ×   4659 €  "BLOODY MARY"
+
+── VENTAS POR COPA ──
+  438 × "EXCELLENCE ROSADO COPA" (5482 €)
+  166 × "COPA CHAMPAGNE CHARLES H." (3228 €)
+  244 × "COPA SANGARIDA GODELLO" (2615 €)
+  34 × "COPA DEL DIA" (985 €)
+  22 × "dulce TOKAJ CHETEAU DERESLA COPA" (248 €)
+  18 × "DE LA RIVA, MANZANILLA FINA COPA" (180 €)
+  1 × "BOURDEAUX COPA" (15 €)
+  1 × "ARMAND HEITZ, BOURGOGNE ROUGE COPA" (14 €)
+
+(listado completo en scripts/tpv_articulos.csv)

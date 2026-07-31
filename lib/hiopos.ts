@@ -206,10 +206,14 @@ function columna(
   };
 }
 
-/** aaaa-mm-dd → cuerpo de la petición para ese día */
-function cuerpo(fecha: string, limite: number) {
-  const [a, m, d] = fecha.split("-").map(Number);
-  const fechaHiopos = `${a}/${m}/${d}`; // el filtro usa 2026/7/31, sin ceros
+/** aaaa-mm-dd → cuerpo de la petición. Con `hasta` pide un rango. */
+function cuerpo(fecha: string, limite: number, hasta?: string) {
+  const fmt = (f: string) => {
+    const [a, m, d] = f.split("-").map(Number);
+    return `${a}/${m}/${d}`; // el filtro usa 2026/7/31, sin ceros
+  };
+  const fechaHiopos = fmt(fecha);
+  const fechaHiopos2 = hasta ? fmt(hasta) : fechaHiopos;
   return {
     offset: 0,
     limit: limite,
@@ -244,7 +248,7 @@ function cuerpo(fecha: string, limite: number) {
           displacementScale: 1,
         },
         dateValue: fechaHiopos,
-        dateValue2: fechaHiopos,
+        dateValue2: fechaHiopos2,
         filterType: 1,
         profileType: null,
         filterBlocks: [
@@ -292,7 +296,12 @@ function cuerpo(fecha: string, limite: number) {
 /** Solo para depurar: expone el cuerpo que se envía */
 export const cuerpoDebug = cuerpo;
 
-async function pedirInforme(fecha: string, token: string, limite: number) {
+async function pedirInforme(
+  fecha: string,
+  token: string,
+  limite: number,
+  hasta?: string
+) {
   const url = process.env.HIOPOS_URL;
   if (!url) throw new Error("Falta HIOPOS_URL");
   return fetch(url, {
@@ -304,7 +313,7 @@ async function pedirInforme(fecha: string, token: string, limite: number) {
       origin: new URL(url).origin,
       referer: `${new URL(url).origin}/icgfront/analytics`,
     },
-    body: JSON.stringify(cuerpo(fecha, limite)),
+    body: JSON.stringify(cuerpo(fecha, limite, hasta)),
   });
 }
 
@@ -312,19 +321,20 @@ async function pedirInforme(fecha: string, token: string, limite: number) {
  *  Si el token guardado ha caducado, inicia sesión y reintenta una vez. */
 export async function ventasDelDia(
   fecha: string,
-  opciones: { token?: string; limite?: number } = {}
+  opciones: { token?: string; limite?: number; hasta?: string } = {}
 ): Promise<ArticuloVendido[]> {
   const limite = opciones.limite ?? 500;
+  const hasta = opciones.hasta;
   let token = opciones.token ?? process.env.HIOPOS_TOKEN ?? "";
 
   let resp = token
-    ? await pedirInforme(fecha, token, limite)
+    ? await pedirInforme(fecha, token, limite, hasta)
     : new Response(null, { status: 401 });
 
   if (resp.status === 401 || resp.status === 403 || resp.status === 500) {
     token = await login();
     await abrirSesion(token);
-    resp = await pedirInforme(fecha, token, limite);
+    resp = await pedirInforme(fecha, token, limite, hasta);
   }
 
   if (!resp.ok) {

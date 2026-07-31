@@ -8,10 +8,23 @@ export type LineaVenta = {
   unidades: number;
   /** código interno del artículo en el TPV, si se conoce (enlace estable) */
   codigo?: number | null;
+  /** facturación total de esa línea, para deducir el precio unitario */
+  importe?: number | null;
 };
 
 /** Ventas por copa: no descuentan una botella entera del inventario */
 export const ES_COPA = /\bcopas?\b|\bby the glass\b|\bcata\b/i;
+
+/** Muchas copas no llevan "COPA" en el nombre. Señal fiable: el precio
+ *  unitario cobrado es muy inferior al precio de botella de la carta.
+ *  Verificado con un año de ventas: las botellas reales se cobran al
+ *  83-101% del PVP, mientras que las copas rondan el 8-25%. */
+const UMBRAL_COPA = 0.5;
+function pareceCopa(linea: LineaVenta, precioBotella: number): boolean {
+  if (!linea.importe || linea.unidades <= 0 || precioBotella <= 0) return false;
+  const unitario = linea.importe / linea.unidades;
+  return unitario / precioBotella < UMBRAL_COPA;
+}
 
 const UMBRAL_AUTO = 0.8;
 const UMBRAL_SUGERENCIA = 0.55;
@@ -73,8 +86,20 @@ export function casarVentas(
   const udsDe = (texto: string) =>
     pendientes.find((p) => p.texto === texto)?.unidades ?? 0;
 
+  const lineaDe = (texto: string) => pendientes.find((p) => p.texto === texto);
+
   for (const c of casados) {
     const qty = udsDe(c.linea.texto);
+    const original = lineaDe(c.linea.texto);
+    // Copa encubierta: mismo vino, pero cobrado a precio de copa
+    if (original && pareceCopa(original, Number(c.vino.precio) || 0)) {
+      const unit = (original.importe ?? 0) / Math.max(1, original.unidades);
+      resultado.no_encontrados!.push({
+        texto: `${qty} × "${c.linea.texto}" a ${unit.toFixed(1)} € (botella ${c.vino.precio} €) — parece venta por copa, no se descuenta`,
+        qty,
+      });
+      continue;
+    }
     if (c.score >= UMBRAL_AUTO) {
       resultado.tpv_items!.push({
         vino_id: c.vino.id,

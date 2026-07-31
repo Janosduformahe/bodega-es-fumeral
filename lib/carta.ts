@@ -19,6 +19,7 @@ export function normalizar(s: string): string {
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/[’‘`´]/g, "'")
+    .replace(/''+/g, "'") // el TPV duplica las comillas: L''Abbaye → L'Abbaye
     .replace(/[^a-z0-9']+/g, " ")
     .replace(/\b1\s*(er|ere|o|º)\b/g, "1er")
     .replace(/\bpremier\b/g, "1er")

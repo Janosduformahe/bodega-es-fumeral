@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
       texto: v.nombre,
       unidades: v.unidades,
       codigo: v.codigo,
+      importe: v.venta,
     }));
     const resultado = casarVentas(
       lineas,
