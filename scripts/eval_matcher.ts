@@ -38,8 +38,16 @@ type Verdad = { n: number; texto: string; vino_id: number | null; confianza: str
     fs.readFileSync(VERDAD, "utf8").replace(/^﻿/, "")
   );
 
+  // La verdad de referencia se hizo con el catálogo de antes: si el vino
+  // objetivo ya se dio de baja, esa línea deja de ser comparable
+  const bajas = verdad.filter((t) => t.vino_id !== null && !porId.has(t.vino_id));
+  if (bajas.length) {
+    log(`⚠ ${bajas.length} líneas de la verdad apuntan a vinos ya dados de baja: se excluyen`);
+  }
+  const vigente = verdad.filter((t) => t.vino_id === null || porId.has(t.vino_id));
+
   // Mejor candidato del catálogo COMPLETO para cada línea
-  const evaluado = verdad.map((t) => {
+  const evaluado = vigente.map((t) => {
     const linea: LineaCarta = { texto: t.texto };
     let mejor = { score: 0, vino: null as Vino | null };
     for (const v of vinos) {

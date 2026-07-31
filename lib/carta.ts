@@ -48,13 +48,14 @@ function tokenIgual(a: string, b: string): boolean {
   return corto.length >= 4 && largo.startsWith(corto);
 }
 
-function comunes(tsA: string[], tsB: string[]): number {
+function comunes(tsA: string[], tsB: string[], soloExacto = false): number {
   const usados = new Set<number>();
   let n = 0;
   for (const a of tsA) {
     for (let i = 0; i < tsB.length; i++) {
       if (usados.has(i)) continue;
-      if (tokenIgual(a, tsB[i])) {
+      const igual = soloExacto ? a === tsB[i] : tokenIgual(a, tsB[i]);
+      if (igual) {
         usados.add(i);
         n++;
         break;
@@ -72,9 +73,19 @@ function solape(tsA: string[], tsB: string[]): number {
 const esMagnum = (s: string) =>
   /\bmagnum\b|\b1\s*[,.]?\s*5\s*l\b|\b150\s*cl\b/i.test(s);
 
-/** Puntuación 0..1 de que la línea de carta sea ese vino del catálogo.
- *  Con `ignorarAnio` se usa para detectar "mismo vino, otra añada". */
-export function puntuar(linea: LineaCarta, v: Vino, ignorarAnio = false): number {
+/** Puntuación 0..1 de que la línea sea ese vino del catálogo.
+ *  - `ignorarAnio`: para detectar "mismo vino, otra añada".
+ *  - `estricto`: para orígenes donde la mayoría de líneas NO son vino
+ *    (informe de ventas del TPV, lleno de comida y bebidas). Exige
+ *    coincidencia exacta en líneas de una sola palabra, que si no
+ *    casarían por prefijo ("CAÑA" con "Croix-Canat"). En la carta no
+ *    hace falta: allí toda línea es un vino. */
+export function puntuar(
+  linea: LineaCarta,
+  v: Vino,
+  ignorarAnio = false,
+  estricto = false
+): number {
   const textoLinea = [linea.bodega, linea.nombre, linea.texto]
     .filter(Boolean)
     .join(" ");
@@ -91,14 +102,17 @@ export function puntuar(linea: LineaCarta, v: Vino, ignorarAnio = false): number
   const tsL = tokens(textoLinea);
   const tsV = tokens(textoVino);
   if (!tsL.length || !tsV.length) return 0;
-  const n = comunes(tsL, tsV);
-  // Mezcla deliberada: el solape "min" premia que uno contenga al otro
-  // (abreviaturas), y la cobertura de la línea evita que un vino genérico
-  // del catálogo gane a la parcela concreta que sí nombra la carta
-  // ("Chambolle-Musigny" vs "Chambolle-Musigny 1er Cru Les Feusselottes").
+
+  const n = comunes(tsL, tsV, estricto && tsL.length === 1);
+  if (!n) return 0;
+
+  // Dos factores: el solape "min" premia que uno contenga al otro
+  // (la carta y el TPV abrevian), y la cobertura de la línea evita que un
+  // vino genérico del catálogo gane a la parcela concreta que sí se nombra
+  // ("Chambolle-Musigny" vs "…1er Cru Les Feusselottes").
   const solapeMin = n / Math.min(tsL.length, tsV.length);
-  const cobertura = n / tsL.length;
-  let score = 0.75 * solapeMin + 0.25 * cobertura;
+  const cobLinea = n / tsL.length;
+  let score = 0.75 * solapeMin + 0.25 * cobLinea;
 
   // Refuerzo si la bodega coincide por separado (la carta suele empezar por ella)
   if (linea.bodega) {
@@ -137,12 +151,13 @@ export type Casado = { linea: LineaCarta; vino: Vino; score: number };
 export function emparejarCarta(
   lineas: LineaCarta[],
   vinos: Vino[],
-  umbral = 0.72
+  umbral = 0.72,
+  estricto = false
 ): { casados: Casado[]; sinCasar: LineaCarta[] } {
   const candidatos: Casado[] = [];
   for (const linea of lineas) {
     for (const vino of vinos) {
-      const score = puntuar(linea, vino);
+      const score = puntuar(linea, vino, false, estricto);
       if (score >= umbral) candidatos.push({ linea, vino, score });
     }
   }

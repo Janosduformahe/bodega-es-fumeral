@@ -1,22 +1,44 @@
+⚠ 5 líneas de la verdad apuntan a vinos ya dados de baja: se excluyen
 ── BARRIDO DE UMBRALES (catálogo completo, 65 líneas) ──
 umbral | aciertos | falsos+ | perdidas | precisión
-  0.60 |       41 |       8 |        1 | 84%
-  0.67 |       38 |       4 |        5 | 90%
-  0.70 |       38 |       4 |        5 | 90%
-  0.75 |       37 |       4 |        6 | 90%
-  0.80 |       33 |       2 |       11 | 94%
-  0.85 |       33 |       2 |       11 | 94%
-  0.90 |       31 |       2 |       13 | 94%
-  0.95 |       29 |       2 |       15 | 94%
-  1.00 |       29 |       2 |       15 | 94%
+  0.60 |       35 |      16 |        0 | 69%
+  0.67 |       32 |      12 |        4 | 73%
+  0.70 |       32 |      11 |        4 | 74%
+  0.75 |       31 |      11 |        5 | 74%
+  0.80 |       28 |      10 |        8 | 74%
+  0.85 |       28 |      10 |        8 | 74%
+  0.90 |       26 |       9 |       10 | 74%
+  0.95 |       24 |       9 |       12 | 73%
+  1.00 |       24 |       8 |       12 | 75%
 
 ── FALSOS POSITIVOS con umbral 0.90 ──
+  "Domaine Benoit Ente, Antichtone"
+    propone 1.00 ID592 Benoit Ente | Bourgogne Antichtone Aligoté
+    verdad: NO está en el catálogo
+  "Domaine Jean Collet & Fils Les Clos"
+    propone 1.00 ID605 Jean Collet & Fills | Chablis Grand Cru Les Clos
+    verdad: ID117 Jean Collet & Fils | Les Clos
+  "Gutier Seijo Mixtura Blue"
+    propone 1.00 ID614 Gutier Seijo | Mixtura Blue
+    verdad: ID305 Mixtura | Ourense
   "Oxer Wines Kalamity Tinto"
     propone 1.00 ID530 Oxer Wines | Kalamity tinto
     verdad: ID232 Oxer Bastegieta | Kalamity Tinto
-  "Juan Valdelana Viñedo Singular"
-    propone 1.00 ID59 Juan Valdelana | Tronco Negro Viñedo Singular
-    verdad: ID524 Juan Valdelana | Viñedo singular
+  "Quinta Muradella Muradella Tinto"
+    propone 1.00 ID616 Quinta de Muradella | Muradella tinto
+    verdad: ID525 Jose Luis Mateos | Quinta da Murradella
+  "Domaine Ponsot Charmes Chambertin"
+    propone 1.00 ID623 Domaine Ponsot | Charmes Chambertin
+    verdad: NO está en el catálogo
+  "David Duband Clos de Vougeot"
+    propone 1.00 ID546 David Duband | Grand Cru Clos Vougeot
+    verdad: ID300 DAVID DUBAND | CLOS DE VOUGEOT GRAND CRU - 75CL
+  "Alain & Raphaël Corcia, Mercurey 1er Cru Les Crêts"
+    propone 0.96 ID618 Alain y Raphaël Corcia | Mercurey Les Crets
+    verdad: NO está en el catálogo
+  "Pierre-Olivier Garcia, Brouilly La Folie"
+    propone 1.00 ID626 Pierre Olivier Garcia | Brouilly La Folie
+    verdad: NO está en el catálogo
 
 ── ACIERTOS QUE CAEN EN LA BANDA DE SUGERENCIA (0.60–0.90) ──
   0.75 "E.Rodez Les Beurys et Secs Grand Cru" → ID42
@@ -28,8 +50,6 @@ umbral | aciertos | falsos+ | perdidas | precisión
   0.75 "Grégory Pérez Mengoba de Espanillo" → ID519
   0.67 "Dominio de Es La Diva" → ID515
   0.86 "Nicole Lamarche Nuits-Saint-Georges 1er Cru Les Cras" → ID568
-  0.75 "Comte Georges Vogüé, Grand Cru" → ID544
-  (10 aciertos recuperables con confirmación de un toque)
+  (9 aciertos recuperables con confirmación de un toque)
 
-── 1 ACIERTOS QUE NI SIQUIERA LLEGAN A 0.60 (irían a búsqueda manual) ──
-  0.44 "Gutier Seijo Mixtura Blue" → deberia ser ID305 Mixtura | Ourense
+── 0 ACIERTOS QUE NI SIQUIERA LLEGAN A 0.60 (irían a búsqueda manual) ──

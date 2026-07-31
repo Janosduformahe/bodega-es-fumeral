@@ -1,0 +1,50 @@
+TPV 2026-07-31: 92 artículos vendidos
+
+══ RESULTADO ══
+  automáticos : 4
+  sugerencias : 0
+  sin casar   : 86 (mayoría comida)
+  ventas por copa detectadas: 2
+
+── VINOS QUE SE DESCONTARÍAN SOLOS ──
+  1.00 −3  "Cantayano"
+        → M. Cantalapiedra | Cantayano (2024) · stock 6
+  0.94 −1  "Domaine Pernot Belicard, Puligny-Montrachet 1er Cru Les Pucelles 2022 - Chardonnay"
+        → Domaine Pernot Belicard | Puligny-Mont. 1er Cru Les Pucelles (2022) · stock 10
+  0.89 −2  "Ossian Viñas Viejas 2023 - Verdejo (D.O. Castilla y León)"
+        → Ossian | Viñas Viejas Verdejo (2023) · stock 2
+  0.80 −1  "Domaine Comte Lafon Mersault 1er Cru Charmes"
+        → Domaine des Comtes Lafon | Meursault 1er Cru Charmes (2023) · stock 2
+
+── SUGERENCIAS (confirmar de un toque) ──
+
+── VENTA POR COPAS (no descuenta botella entera) ──
+  1 × "COPA DEL DIA" (20 €)
+  9 × "EXCELLENCE ROSADO COPA" (117 €)
+
+── SIN CASAR (primeras 25) ──
+  3 × "OSTRA CHICHARRON"
+  4 × "GILDAS PESCADO AZUL"
+  2 × "ENSALADILLA CON VENTRESCA"
+  7 × "TARTAR DE TOMATE"
+  2 × "DADOS DE MERLUZA"
+  5 × "BUÑUELOS BOGAVANTE"
+  6 × "CALAMAR ANDALUZA"
+  1 × "GAMBA AJILLO"
+  3 × "ESPARDEÑA AJILLO"
+  1 × "ALMEJAS BRASA"
+  7 × "PATATAS FRITAS"
+  6 × "LECHUGA FRESCA"
+  13 × "TOMATES ALIÑADOS"
+  6 × "PIMIENTOS DEL PADRON"
+  2 × "CHEESECAKE FLAO"
+  3 × "ARROZ CON LECHE"
+  4 × "BLOODY MARY"
+  1 × "APEROL SPRITZ"
+  14 × "ESPRESSO"
+  2 × "CAFE CORTADO"
+  3 × "CAFE AMERICANO"
+  1 × "CAFE CAPUCCINO"
+  3 × "ICED COFFEE"
+  1 × "ICED LATTE"
+  1 × "TE VERDE"

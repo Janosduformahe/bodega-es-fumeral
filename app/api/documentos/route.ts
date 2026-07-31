@@ -401,7 +401,8 @@ async function casarVentasTpv(
   const { casados, sinCasar } = emparejarCarta(
     pendientes.map((v) => ({ texto: v.texto })),
     vinos,
-    UMBRAL_SUGERENCIA
+    UMBRAL_SUGERENCIA,
+    true // el informe del TPV está lleno de comida: modo estricto
   );
   const unidadesDe = (texto: string) =>
     pendientes.find((p) => p.texto === texto)?.unidades ?? 0;

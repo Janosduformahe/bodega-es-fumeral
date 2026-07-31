@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/tpv/sincronizar",
+      "schedule": "0 5 * * *"
+    }
+  ]
+}
