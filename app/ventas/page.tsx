@@ -48,9 +48,12 @@ export default function VentasPage() {
   const supabase = useMemo(() => createClient(), []);
   const [dias, setDias] = useState(30);
   const [medida, setMedida] = useState<Medida>("botellas");
-  // Hasta que entren las ventas del TPV, las bajadas de stock del inventario
-  // son el mejor proxy de consumo
-  const [conAjustes, setConAjustes] = useState(true);
+  // Las ventas reales son las del TPV (y las marcadas a mano). Las bajadas que
+  // salen al importar un inventario NO son ventas: son el cuadre entre lo que
+  // decía la app y lo que había en la estantería. Antes de conectar Hiopos eran
+  // el único proxy de consumo y venían activadas; ahora sumarlas al mismo
+  // periodo cuenta lo mismo dos veces, así que van apagadas por defecto.
+  const [conAjustes, setConAjustes] = useState(false);
   const [ventas, setVentas] = useState<VentaRow[] | null>(null);
   const [vinos, setVinos] = useState<Vino[]>([]);
 
@@ -258,9 +261,9 @@ export default function VentasPage() {
             style={{ "--dotc": "var(--muted2)" } as React.CSSProperties}
             aria-pressed={conAjustes}
             onClick={() => setConAjustes((c) => !c)}
-            title="Incluir las bajadas de stock registradas en los inventarios, no solo las ventas marcadas una a una"
+            title="Sumar también los descuadres de los inventarios. No son ventas: es la diferencia entre lo que decía la app y lo que se contó en la estantería."
           >
-            {conAjustes ? "✓ " : "+ "}Ajustes de inventario
+            {conAjustes ? "✓ " : "+ "}Descuadres de inventario
           </button>
         </div>
 
@@ -335,8 +338,8 @@ export default function VentasPage() {
 
         <div className="an-nota">
           {conAjustes
-            ? "Incluye las ventas marcadas una a una y las bajadas de stock detectadas en los inventarios (el mejor reflejo del consumo real hasta que entren las ventas del TPV). "
-            : "Solo ventas marcadas una a una en el inventario. "}
+            ? "⚠ Estás sumando los descuadres de los inventarios, que NO son ventas: son la diferencia entre lo que decía la app y lo que se contó. Si el periodo coincide con ventas ya descargadas del TPV, lo mismo se cuenta dos veces. "
+            : "Ventas reales: las del TPV de Hiopos más las marcadas a mano. "}
           Cada movimiento guarda el precio y el coste del momento, así que los
           importes son históricos y no cambian al retocar la carta. Lo que no
           tiene coste conocido suma en ingresos pero no en beneficio.
