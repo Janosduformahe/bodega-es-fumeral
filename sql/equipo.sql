@@ -108,7 +108,8 @@ declare tope int;
 begin
   -- el lock evita que dos altas simultáneas se cuelen a la vez
   perform pg_advisory_xact_lock(hashtext('perfiles_tope'));
-  select coalesce(nullif(valor, ''), '4')::int into tope
+  -- ajustes.valor es jsonb: #>> '{}' lo saca como texto plano
+  select coalesce(nullif(valor #>> '{}', ''), '4')::int into tope
     from ajustes where clave = 'max_usuarios';
   if (select count(*) from perfiles) >= coalesce(tope, 4) then
     raise exception 'limite de cuentas alcanzado (%). Borra o reutiliza una existente.', tope;
