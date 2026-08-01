@@ -150,8 +150,12 @@ export default function InventarioPage() {
         for (const a of data ?? []) {
           if (a.clave === "umbral_stock_bajo") setThresh(Number(a.valor));
           if (a.clave === "multiplicador_precio") setMult(Number(a.valor) || 1.8);
+          // van indexadas por usuario: cada uno silencia sus propias alertas
           if (a.clave === "alertas_descartadas")
-            setDismissed((a.valor as Record<string, number>) ?? {});
+            supabase.auth.getUser().then(({ data: { user } }) => {
+              const todas = (a.valor ?? {}) as Record<string, Record<string, number>>;
+              if (user) setDismissed(todas[user.id] ?? {});
+            });
         }
       });
 
@@ -202,9 +206,9 @@ export default function InventarioPage() {
   }
 
   async function dismissAlert(vino: Vino) {
-    const next = { ...dismissed, [vino.id]: vino.stock };
-    setDismissed(next);
-    await supabase.from("ajustes").update({ valor: next }).eq("clave", "alertas_descartadas");
+    setDismissed({ ...dismissed, [vino.id]: vino.stock });
+    // el merge lo hace Postgres: si otro descarta a la vez, no se pisan
+    await supabase.rpc("descartar_alerta", { p_vino_id: vino.id, p_stock: vino.stock });
   }
 
   async function confirmMovimiento() {

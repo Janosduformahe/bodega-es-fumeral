@@ -21,7 +21,13 @@ export default function LoginPage() {
       password,
     });
     if (error) {
-      setError("Email o contraseña incorrectos");
+      // Si la cuenta está desactivada, la contraseña es correcta: decirle que
+      // se ha equivocado le hace reintentar hasta chocar con el límite de intentos
+      setError(
+        error.code === "user_banned" || /banned/i.test(error.message)
+          ? "Esta cuenta no tiene acceso ahora mismo. Habla con el responsable de la bodega."
+          : "Email o contraseña incorrectos"
+      );
       setLoading(false);
       return;
     }
