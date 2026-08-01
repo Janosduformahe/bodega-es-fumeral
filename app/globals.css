@@ -197,6 +197,16 @@ input[type=search]::placeholder{color:var(--hint);font-weight:400}
 .btn-apply:disabled{opacity:.5;cursor:default}
 .btn-discard{background:none;border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--muted);font-size:15px;font-weight:600;height:54px;padding:0 18px}
 
+/* Visor del documento subido, para cotejarlo con lo que se ha extraído */
+.doc-visor{margin:0 16px 16px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-md)}
+.doc-visor-cab{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);background:var(--sand-act)}
+.doc-visor-nombre{flex:1;min-width:0;font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-visor-cab a{font-size:13px;font-weight:700;color:var(--brand);white-space:nowrap}
+.doc-visor-cerrar{background:none;border:none;color:var(--muted);font-size:15px;line-height:1;padding:4px 2px}
+.doc-visor-marco{display:block;width:100%;height:58vh;border:none;background:#fff}
+.doc-visor-img{display:block;width:100%;max-height:58vh;object-fit:contain;background:#fff}
+.doc-visor-vacio{padding:34px 18px;text-align:center;font-size:13.5px;line-height:1.6;color:var(--muted)}
+
 .doc-history{margin:0 16px;display:flex;flex-direction:column;gap:10px}
 .dh-item{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:13px 16px;box-shadow:var(--shadow-sm)}
 .dh-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;gap:8px}
@@ -381,4 +391,11 @@ input[type=file]{display:none}
   .doc-zone{padding:48px 16px}
   .doc-history{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .doc-type-row{max-width:860px;grid-template-columns:repeat(4,1fr) !important}
+  /* El documento se queda a la vista mientras se revisan los datos */
+  .doc-split{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:start;gap:0}
+  .doc-split .doc-visor{position:sticky;top:64px;margin-right:0}
+  .doc-split .doc-datos{min-width:0}
+  .doc-split .doc-datos>*{margin-left:0}
+  .doc-visor-marco{height:calc(100vh - 150px)}
+  .doc-visor-img{max-height:calc(100vh - 150px)}
 }

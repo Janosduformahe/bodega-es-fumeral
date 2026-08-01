@@ -102,6 +102,12 @@ export default function DocumentosPage() {
   const [bajando, setBajando] = useState(false);
   const [bajadas, setBajadas] = useState<Set<number>>(new Set());
   const [history, setHistory] = useState<DocumentoRow[]>([]);
+  // Vista previa del documento subido, para cotejar con lo extraído
+  const [vista, setVista] = useState<{
+    url: string;
+    nombre: string;
+    tipo: "pdf" | "imagen" | "hoja";
+  } | null>(null);
   // Revisión de la carta: sugerencias aceptadas y resoluciones manuales
   const [sugOk, setSugOk] = useState<Set<number>>(new Set());
   const [manual, setManual] = useState<Map<string, VinoBusca>>(new Map());
@@ -134,6 +140,19 @@ export default function DocumentosPage() {
     setPending(null);
     setProcessing(true);
     setLog([`📄 Subiendo ${file.name} (${Math.round(file.size / 1024)} KB)…`]);
+
+    // Vista previa local: el fichero no se vuelve a descargar del servidor
+    if (vista) URL.revokeObjectURL(vista.url);
+    const n = file.name.toLowerCase();
+    setVista({
+      url: URL.createObjectURL(file),
+      nombre: file.name,
+      tipo: n.endsWith(".pdf") || file.type === "application/pdf"
+        ? "pdf"
+        : /\.(jpe?g|png|webp|gif|heic)$/.test(n) || file.type.startsWith("image/")
+          ? "imagen"
+          : "hoja",
+    });
 
     try {
       addLog("🤖 Analizando con IA…");
@@ -318,6 +337,7 @@ export default function DocumentosPage() {
           }${res.precios_actualizados ? `, ${res.precios_actualizados} precios` : ""}.`
     );
     setPending(null);
+    cerrarVista();
     loadHistory();
   }
 
@@ -340,7 +360,13 @@ export default function DocumentosPage() {
     if (!pending) return;
     // el documento queda registrado pero sin aplicar
     setPending(null);
+    cerrarVista();
     loadHistory();
+  }
+
+  function cerrarVista() {
+    if (vista) URL.revokeObjectURL(vista.url);
+    setVista(null);
   }
 
   const r = pending?.resultado;
@@ -454,271 +480,310 @@ export default function DocumentosPage() {
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
 
-        {(processing || error) && (
-          <div className="doc-processing">
-            <div className="dp-title">
-              {processing ? (
-                <>
-                  <span className="spinner" aria-hidden="true" /> Analizando documento…
-                </>
+        {/* Documento a la izquierda y lo extraído a la derecha, para cotejar */}
+        <div className={vista ? "doc-split" : ""}>
+          {vista && (
+            <div className="doc-visor">
+              <div className="doc-visor-cab">
+                <span className="doc-visor-nombre">📄 {vista.nombre}</span>
+                <a href={vista.url} target="_blank" rel="noreferrer">
+                  Abrir ↗
+                </a>
+                <button
+                  className="doc-visor-cerrar"
+                  onClick={cerrarVista}
+                  aria-label="Ocultar el documento"
+                >
+                  ✕
+                </button>
+              </div>
+              {vista.tipo === "pdf" ? (
+                <iframe
+                  title={`Documento ${vista.nombre}`}
+                  src={vista.url}
+                  className="doc-visor-marco"
+                />
+              ) : vista.tipo === "imagen" ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={vista.url} alt={vista.nombre} className="doc-visor-img" />
               ) : (
-                "Error al procesar"
+                <div className="doc-visor-vacio">
+                  Hoja de cálculo: no se puede previsualizar aquí.
+                  <br />
+                  Ábrela en tu programa si quieres cotejar los datos.
+                </div>
               )}
             </div>
-            <div className="dp-log">
-              {log.map((l, i) => (
-                <div key={i}>{l}</div>
-              ))}
-              {error && <div>❌ {error}</div>}
-            </div>
-          </div>
-        )}
+          )}
 
-        {pending && r && (
-          <div className="doc-result">
-            <div className="dr-header">
-              <div>
-                <div className="dr-title">
-                  {pending.resultado.proveedor_o_fecha || pending.fileName}
-                </div>
-                <div className="dr-sub">
-                  {nMovs} movimientos
-                  {nNuevas ? ` · ${nNuevas} referencias nuevas` : ""}
-                  {nNoEnc ? ` · ${nNoEnc} sin identificar` : ""}
-                </div>
+          <div className="doc-datos">
+          {(processing || error) && (
+            <div className="doc-processing">
+              <div className="dp-title">
+                {processing ? (
+                  <>
+                    <span className="spinner" aria-hidden="true" /> Analizando documento…
+                  </>
+                ) : (
+                  "Error al procesar"
+                )}
+              </div>
+              <div className="dp-log">
+                {log.map((l, i) => (
+                  <div key={i}>{l}</div>
+                ))}
+                {error && <div>❌ {error}</div>}
               </div>
             </div>
-            <div>
-              {(r.preview ?? []).map((p, i) => (
-                <div className="dr-item" key={i}>
-                  <div className="dr-wine">
-                    <div className="dr-wine-name">{p.etiqueta}</div>
-                    <div className="dr-wine-match">{p.detalle}</div>
-                  </div>
-                  <div className={`dr-qty ${p.direccion}`}>{p.qty}</div>
-                </div>
-              ))}
-              {(r.no_encontrados ?? []).map((x, i) => {
-                // Distinguir avisos informativos (no crean ni cambian nada)
-                // de líneas de documento realmente no identificadas
-                const esAviso = /^(Añada distinta|\d+ vinos de la bodega|")/.test(
-                  x.texto
-                );
-                return (
-                  <div className="dr-item dr-no-match" key={`ne-${i}`}>
-                    <div className="dr-wine">
-                      <div className="dr-wine-name">
-                        {esAviso ? "ℹ Aviso — sin cambios" : "⚠ No identificado"}
-                      </div>
-                      <div className="dr-wine-match">
-                        {x.texto}
-                        {x.qty ? ` · ${x.qty} bot.` : ""}
-                      </div>
-                    </div>
-                    <div className="dr-qty">{esAviso ? "—" : "?"}</div>
-                  </div>
-                );
-              })}
-            </div>
-            {(pending.tipo === "carta" || esTpv()) && (
-              <>
-                {(r.carta_sugerencias ?? []).length > 0 && (
-                  <div className="rev-sec">
-                    <div className="rev-head">
-                      ¿Es el mismo vino? ({(r.carta_sugerencias ?? []).length})
-                      <span className="rev-sub">
-                        Toca para incluirlo en la carta
-                      </span>
-                    </div>
-                    {(r.carta_sugerencias ?? []).map((s, i) => (
-                      <button
-                        key={i}
-                        className={`sug-item${sugOk.has(i) ? " on" : ""}`}
-                        onClick={() =>
-                          setSugOk((prev) => {
-                            const n = new Set(prev);
-                            if (n.has(i)) n.delete(i);
-                            else n.add(i);
-                            return n;
-                          })
-                        }
-                      >
-                        <span className="sug-check">{sugOk.has(i) ? "✓" : ""}</span>
-                        <span className="sug-text">
-                          <span className="sug-carta">{s.texto}</span>
-                          <span className="sug-flecha">
-                            ≈ {s.etiqueta}
-                            {s.precio ? ` · ${s.precio}€` : ""}
-                          </span>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+          )}
 
-                {(r.carta_sin_casar ?? []).length > 0 && (
-                  <div className="rev-sec">
-                    <div className="rev-head">
-                      No están en el inventario ({(r.carta_sin_casar ?? []).length})
-                      <span className="rev-sub">
-                        Búscalas si crees que sí están con otro nombre
-                      </span>
+          {pending && r && (
+            <div className="doc-result">
+              <div className="dr-header">
+                <div>
+                  <div className="dr-title">
+                    {pending.resultado.proveedor_o_fecha || pending.fileName}
+                  </div>
+                  <div className="dr-sub">
+                    {nMovs} movimientos
+                    {nNuevas ? ` · ${nNuevas} referencias nuevas` : ""}
+                    {nNoEnc ? ` · ${nNoEnc} sin identificar` : ""}
+                  </div>
+                </div>
+              </div>
+              <div>
+                {(r.preview ?? []).map((p, i) => (
+                  <div className="dr-item" key={i}>
+                    <div className="dr-wine">
+                      <div className="dr-wine-name">{p.etiqueta}</div>
+                      <div className="dr-wine-match">{p.detalle}</div>
                     </div>
-                    {(r.carta_sin_casar ?? []).map((l) => {
-                      const elegido = manual.get(l.texto);
-                      return (
-                        <div className="manual-item" key={l.texto}>
-                          <div className="manual-linea">
-                            <span className="manual-carta">{l.texto}</span>
-                            {l.precio ? (
-                              <span className="manual-precio">{l.precio}€</span>
-                            ) : null}
-                          </div>
-                          {l.nota && <div className="manual-nota">{l.nota}</div>}
-                          {elegido ? (
-                            <div className="manual-elegido">
-                              ✓ {etiquetaVino(elegido)}
-                              <button
-                                className="manual-quitar"
-                                onClick={() =>
-                                  setManual((prev) => {
-                                    const n = new Map(prev);
-                                    n.delete(l.texto);
-                                    return n;
-                                  })
-                                }
-                              >
-                                quitar
-                              </button>
+                    <div className={`dr-qty ${p.direccion}`}>{p.qty}</div>
+                  </div>
+                ))}
+                {(r.no_encontrados ?? []).map((x, i) => {
+                  // Distinguir avisos informativos (no crean ni cambian nada)
+                  // de líneas de documento realmente no identificadas
+                  const esAviso = /^(Añada distinta|\d+ vinos de la bodega|")/.test(
+                    x.texto
+                  );
+                  return (
+                    <div className="dr-item dr-no-match" key={`ne-${i}`}>
+                      <div className="dr-wine">
+                        <div className="dr-wine-name">
+                          {esAviso ? "ℹ Aviso — sin cambios" : "⚠ No identificado"}
+                        </div>
+                        <div className="dr-wine-match">
+                          {x.texto}
+                          {x.qty ? ` · ${x.qty} bot.` : ""}
+                        </div>
+                      </div>
+                      <div className="dr-qty">{esAviso ? "—" : "?"}</div>
+                    </div>
+                  );
+                })}
+              </div>
+              {(pending.tipo === "carta" || esTpv()) && (
+                <>
+                  {(r.carta_sugerencias ?? []).length > 0 && (
+                    <div className="rev-sec">
+                      <div className="rev-head">
+                        ¿Es el mismo vino? ({(r.carta_sugerencias ?? []).length})
+                        <span className="rev-sub">
+                          Toca para incluirlo en la carta
+                        </span>
+                      </div>
+                      {(r.carta_sugerencias ?? []).map((s, i) => (
+                        <button
+                          key={i}
+                          className={`sug-item${sugOk.has(i) ? " on" : ""}`}
+                          onClick={() =>
+                            setSugOk((prev) => {
+                              const n = new Set(prev);
+                              if (n.has(i)) n.delete(i);
+                              else n.add(i);
+                              return n;
+                            })
+                          }
+                        >
+                          <span className="sug-check">{sugOk.has(i) ? "✓" : ""}</span>
+                          <span className="sug-text">
+                            <span className="sug-carta">{s.texto}</span>
+                            <span className="sug-flecha">
+                              ≈ {s.etiqueta}
+                              {s.precio ? ` · ${s.precio}€` : ""}
+                            </span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {(r.carta_sin_casar ?? []).length > 0 && (
+                    <div className="rev-sec">
+                      <div className="rev-head">
+                        No están en el inventario ({(r.carta_sin_casar ?? []).length})
+                        <span className="rev-sub">
+                          Búscalas si crees que sí están con otro nombre
+                        </span>
+                      </div>
+                      {(r.carta_sin_casar ?? []).map((l) => {
+                        const elegido = manual.get(l.texto);
+                        return (
+                          <div className="manual-item" key={l.texto}>
+                            <div className="manual-linea">
+                              <span className="manual-carta">{l.texto}</span>
+                              {l.precio ? (
+                                <span className="manual-precio">{l.precio}€</span>
+                              ) : null}
                             </div>
-                          ) : (
-                            <BuscadorVino
-                              catalogo={catalogo}
-                              excluidos={
-                                new Set(itemsCarta().map((i) => i.vino_id))
-                              }
-                              onPick={(v) =>
-                                setManual((prev) =>
-                                  new Map(prev).set(l.texto, v)
-                                )
-                              }
-                            />
+                            {l.nota && <div className="manual-nota">{l.nota}</div>}
+                            {elegido ? (
+                              <div className="manual-elegido">
+                                ✓ {etiquetaVino(elegido)}
+                                <button
+                                  className="manual-quitar"
+                                  onClick={() =>
+                                    setManual((prev) => {
+                                      const n = new Map(prev);
+                                      n.delete(l.texto);
+                                      return n;
+                                    })
+                                  }
+                                >
+                                  quitar
+                                </button>
+                              </div>
+                            ) : (
+                              <BuscadorVino
+                                catalogo={catalogo}
+                                excluidos={
+                                  new Set(itemsCarta().map((i) => i.vino_id))
+                                }
+                                onPick={(v) =>
+                                  setManual((prev) =>
+                                    new Map(prev).set(l.texto, v)
+                                  )
+                                }
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {esTpv() ? (
+                    <div className="rev-resumen">
+                      Se descontarán{" "}
+                      <strong>
+                        {itemsTpv().reduce((s, i) => s + Math.abs(i.qty), 0)} botellas
+                      </strong>{" "}
+                      de <strong>{itemsTpv().length}</strong> referencias. Lo que no
+                      casa suele ser comida o bebida que no es vino: puedes ignorarlo.
+                    </div>
+                  ) : (
+                    <div className="rev-resumen">
+                      <strong>{itemsCarta().length}</strong> referencias quedarán{" "}
+                      <strong>en carta</strong> ·{" "}
+                      <strong>
+                        {Math.max(0, catalogo.length - itemsCarta().length)}
+                      </strong>{" "}
+                      fuera de carta (siguen en la bodega, no se toca el stock)
+                    </div>
+                  )}
+                </>
+              )}
+
+              {(() => {
+                const bajas = (r.bajas_sugeridas ?? []).filter(
+                  (b) => !bajadas.has(b.vino_id)
+                );
+                if (!bajas.length) return null;
+                const seguras = bajas.filter((b) => b.stock === 0);
+                const conStock = bajas.filter((b) => b.stock > 0);
+                return (
+                  <div className="bajas-sec">
+                    <div className="bajas-head">
+                      Referencias que este inventario ya no incluye ({bajas.length})
+                    </div>
+                    {seguras.length > 0 && (
+                      <>
+                        <div className="bajas-lista">
+                          {seguras.slice(0, 8).map((b) => (
+                            <div className="bajas-item" key={b.vino_id}>
+                              {b.etiqueta}
+                              <span className="bajas-motivo">
+                                {b.motivo === "sin_cantidad"
+                                  ? "sin cantidad"
+                                  : "no está en el Excel"}
+                              </span>
+                            </div>
+                          ))}
+                          {seguras.length > 8 && (
+                            <div className="bajas-item bajas-mas">
+                              y {seguras.length - 8} más…
+                            </div>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {esTpv() ? (
-                  <div className="rev-resumen">
-                    Se descontarán{" "}
-                    <strong>
-                      {itemsTpv().reduce((s, i) => s + Math.abs(i.qty), 0)} botellas
-                    </strong>{" "}
-                    de <strong>{itemsTpv().length}</strong> referencias. Lo que no
-                    casa suele ser comida o bebida que no es vino: puedes ignorarlo.
-                  </div>
-                ) : (
-                  <div className="rev-resumen">
-                    <strong>{itemsCarta().length}</strong> referencias quedarán{" "}
-                    <strong>en carta</strong> ·{" "}
-                    <strong>
-                      {Math.max(0, catalogo.length - itemsCarta().length)}
-                    </strong>{" "}
-                    fuera de carta (siguen en la bodega, no se toca el stock)
-                  </div>
-                )}
-              </>
-            )}
-
-            {(() => {
-              const bajas = (r.bajas_sugeridas ?? []).filter(
-                (b) => !bajadas.has(b.vino_id)
-              );
-              if (!bajas.length) return null;
-              const seguras = bajas.filter((b) => b.stock === 0);
-              const conStock = bajas.filter((b) => b.stock > 0);
-              return (
-                <div className="bajas-sec">
-                  <div className="bajas-head">
-                    Referencias que este inventario ya no incluye ({bajas.length})
-                  </div>
-                  {seguras.length > 0 && (
-                    <>
-                      <div className="bajas-lista">
-                        {seguras.slice(0, 8).map((b) => (
-                          <div className="bajas-item" key={b.vino_id}>
-                            {b.etiqueta}
-                            <span className="bajas-motivo">
-                              {b.motivo === "sin_cantidad"
-                                ? "sin cantidad"
-                                : "no está en el Excel"}
-                            </span>
-                          </div>
-                        ))}
-                        {seguras.length > 8 && (
-                          <div className="bajas-item bajas-mas">
-                            y {seguras.length - 8} más…
-                          </div>
-                        )}
+                        <button
+                          className="btn-baja-lote"
+                          disabled={bajando}
+                          onClick={() =>
+                            darDeBajaLote(
+                              seguras.map((b) => b.vino_id),
+                              "sin stock"
+                            )
+                          }
+                        >
+                          <IconTrash size={15} />
+                          {bajando
+                            ? "Dando de baja…"
+                            : `Dar de baja las ${seguras.length} sin stock`}
+                        </button>
+                      </>
+                    )}
+                    {conStock.length > 0 && (
+                      <div className="bajas-aviso">
+                        ⚠ {conStock.length} de ellas todavía tienen botellas en la
+                        app (
+                        {conStock.reduce((s, b) => s + b.stock, 0)} en total). No se
+                        incluyen en el botón: revísalas una a una desde el
+                        inventario.
                       </div>
-                      <button
-                        className="btn-baja-lote"
-                        disabled={bajando}
-                        onClick={() =>
-                          darDeBajaLote(
-                            seguras.map((b) => b.vino_id),
-                            "sin stock"
-                          )
-                        }
-                      >
-                        <IconTrash size={15} />
-                        {bajando
-                          ? "Dando de baja…"
-                          : `Dar de baja las ${seguras.length} sin stock`}
-                      </button>
-                    </>
-                  )}
-                  {conStock.length > 0 && (
-                    <div className="bajas-aviso">
-                      ⚠ {conStock.length} de ellas todavía tienen botellas en la
-                      app (
-                      {conStock.reduce((s, b) => s + b.stock, 0)} en total). No se
-                      incluyen en el botón: revísalas una a una desde el
-                      inventario.
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-            <div className="dr-actions">
-              <button className="btn-discard" onClick={descartar}>
-                Descartar
-              </button>
-              <button
-                className="btn-apply"
-                onClick={aplicar}
-                disabled={
-                  applying ||
-                  (pending.tipo === "carta"
-                    ? itemsCarta().length === 0
-                    : esTpv()
-                      ? itemsTpv().length === 0
-                      : nMovs + nNuevas === 0)
-                }
-              >
-                {applying
-                  ? "Aplicando…"
-                  : pending.tipo === "carta"
-                    ? "Aplicar la carta"
-                    : esTpv()
-                      ? "Descontar las ventas"
-                      : "Aplicar al inventario"}
-              </button>
+                    )}
+                  </div>
+                );
+              })()}
+              <div className="dr-actions">
+                <button className="btn-discard" onClick={descartar}>
+                  Descartar
+                </button>
+                <button
+                  className="btn-apply"
+                  onClick={aplicar}
+                  disabled={
+                    applying ||
+                    (pending.tipo === "carta"
+                      ? itemsCarta().length === 0
+                      : esTpv()
+                        ? itemsTpv().length === 0
+                        : nMovs + nNuevas === 0)
+                  }
+                >
+                  {applying
+                    ? "Aplicando…"
+                    : pending.tipo === "carta"
+                      ? "Aplicar la carta"
+                      : esTpv()
+                        ? "Descontar las ventas"
+                        : "Aplicar al inventario"}
+                </button>
+              </div>
             </div>
+          )}
           </div>
-        )}
+        </div>
 
         {history.length > 0 && (
           <>
