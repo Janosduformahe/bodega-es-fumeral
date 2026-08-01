@@ -33,7 +33,13 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLogin = pathname.startsWith("/login");
 
-  if (!user && !isLogin) {
+  // Las rutas de API se autorizan solas y responden 401 en JSON. Redirigirlas
+  // a la pantalla de login rompía el cron nocturno del TPV: llegaba sin sesión,
+  // se llevaba un 307 a /login y nunca se ejecutaba la comprobación de su
+  // secreto. Además un 307 no es un error, así que fallaba en silencio.
+  const esApi = pathname.startsWith("/api/");
+
+  if (!user && !isLogin && !esApi) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
