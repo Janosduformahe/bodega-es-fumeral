@@ -1,0 +1,20 @@
+sesión abierta · catálogo 428 vinos · APLICAR
+  … 2026-05-23 · 131 ventas de vino acumuladas
+  … 2026-06-14 · 309 ventas de vino acumuladas
+  … 2026-07-04 · 493 ventas de vino acumuladas
+  … 2026-07-24 · 742 ventas de vino acumuladas
+
+═══ RESUMEN 2026-01-01 → 2026-07-31 ═══
+  días con ventas    : 87 de 212
+  movimientos de vino: 839
+  botellas           : 1150
+  facturación vino   : 141.428 €
+  beneficio estimado : 75.402 € (682 con coste conocido)
+  referencias tocadas: 185
+
+Enviando en bloques…
+  lote 1: 400 acumulados
+  lote 2: 800 acumulados
+  lote 3: 839 acumulados
+
+✓ 839 movimientos históricos cargados. El stock NO se ha tocado.
