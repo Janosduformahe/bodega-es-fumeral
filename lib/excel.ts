@@ -162,7 +162,23 @@ function puntuar(f: FilaExcel, v: Vino): number {
 
 export type Emparejado = { fila: FilaExcel; vino: Vino; score: number };
 
-/** Matching greedy 1:1 por puntuación descendente. */
+/** Identidad normalizada: mismo texto y misma añada ⇒ es la misma referencia */
+const identidadFila = (f: FilaExcel) =>
+  `${normalizar(textoFila(f))}|${f.anio ?? ""}`;
+const identidadVino = (v: Vino) => `${normalizar(textoVino(v))}|${v.anio ?? ""}`;
+
+/** Matching 1:1 en dos pases.
+ *
+ *  1º identidad exacta: una fila cuyo texto y añada coinciden letra a letra
+ *     con un vino se casa SIEMPRE con él. Sin este pase, dos filas parecidas
+ *     podían empatar a puntos y el greedy asignaba la ficha a la equivocada:
+ *     así se crearon los duplicados del 02/08 («Palo blanco» acabó como
+ *     referencia nueva porque «Palo Blanco Las molinas» le robó su ficha).
+ *  2º greedy por puntuación para todo lo demás.
+ *
+ *  Además detecta filas repetidas dentro del propio Excel: la segunda vez
+ *  que aparece la misma identidad no se convierte en referencia nueva, se
+ *  devuelve en `filasRepetidas` para avisar al usuario. */
 export function emparejar(
   filas: FilaExcel[],
   vinos: Vino[],
@@ -171,18 +187,54 @@ export function emparejar(
   emparejados: Emparejado[];
   filasSueltas: FilaExcel[];
   vinosSueltos: Vino[];
+  filasRepetidas: FilaExcel[];
 } {
-  const candidatos: Emparejado[] = [];
+  const filaUsada = new Set<number>();
+  const vinoUsado = new Set<number>();
+  const emparejados: Emparejado[] = [];
+
+  // filas repetidas dentro del excel: solo la primera cuenta
+  const vistas = new Map<string, number>();
+  const filasRepetidas: FilaExcel[] = [];
+  const filasUnicas: FilaExcel[] = [];
   for (const f of filas) {
+    const k = identidadFila(f);
+    if (vistas.has(k)) {
+      filasRepetidas.push(f);
+    } else {
+      vistas.set(k, f.fila);
+      filasUnicas.push(f);
+    }
+  }
+
+  // 1º pase: identidad exacta
+  const porIdentidad = new Map<string, Vino[]>();
+  for (const v of vinos) {
+    const k = identidadVino(v);
+    porIdentidad.set(k, [...(porIdentidad.get(k) ?? []), v]);
+  }
+  for (const f of filasUnicas) {
+    const cands = (porIdentidad.get(identidadFila(f)) ?? []).filter(
+      (v) => !vinoUsado.has(v.id)
+    );
+    if (cands.length) {
+      filaUsada.add(f.fila);
+      vinoUsado.add(cands[0].id);
+      emparejados.push({ fila: f, vino: cands[0], score: 1 });
+    }
+  }
+
+  // 2º pase: greedy por puntuación
+  const candidatos: Emparejado[] = [];
+  for (const f of filasUnicas) {
+    if (filaUsada.has(f.fila)) continue;
     for (const v of vinos) {
+      if (vinoUsado.has(v.id)) continue;
       const score = puntuar(f, v);
       if (score >= umbral) candidatos.push({ fila: f, vino: v, score });
     }
   }
   candidatos.sort((a, b) => b.score - a.score);
-  const filaUsada = new Set<number>();
-  const vinoUsado = new Set<number>();
-  const emparejados: Emparejado[] = [];
   for (const c of candidatos) {
     if (filaUsada.has(c.fila.fila) || vinoUsado.has(c.vino.id)) continue;
     filaUsada.add(c.fila.fila);
@@ -191,7 +243,25 @@ export function emparejar(
   }
   return {
     emparejados,
-    filasSueltas: filas.filter((f) => !filaUsada.has(f.fila)),
+    filasSueltas: filasUnicas.filter((f) => !filaUsada.has(f.fila)),
     vinosSueltos: vinos.filter((v) => !vinoUsado.has(v.id)),
+    filasRepetidas,
   };
+}
+
+/** Vecino más parecido del catálogo COMPLETO, para avisar de posibles
+ *  duplicados antes de crear una referencia nueva. Ignora la exclusividad
+ *  del 1:1 (aquí no se asigna nada, solo se avisa). */
+export function posibleDuplicado(
+  f: FilaExcel,
+  vinos: Vino[],
+  // bajo a propósito: es solo un aviso y es peor un duplicado que un falso aviso
+  umbral = 0.45
+): { vino: Vino; score: number } | null {
+  let mejor: { vino: Vino; score: number } | null = null;
+  for (const v of vinos) {
+    const s = puntuar(f, v);
+    if (s >= umbral && s > (mejor?.score ?? 0)) mejor = { vino: v, score: s };
+  }
+  return mejor;
 }

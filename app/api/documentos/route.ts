@@ -6,7 +6,7 @@ import {
   mismaReferenciaOtraAnada,
   promptExtraerCarta,
 } from "@/lib/carta";
-import { emparejar, parsearInventario, type FilaExcel } from "@/lib/excel";
+import { emparejar, parsearInventario, posibleDuplicado, type FilaExcel } from "@/lib/excel";
 import { parsearVentasTpv, type VentaTpv } from "@/lib/tpv";
 import { createClient } from "@/lib/supabase/server";
 import { promptAlbaranCierre, promptExcel } from "@/lib/prompts";
@@ -166,7 +166,7 @@ async function importarExcelDeterminista(
   vinos: Vino[],
   multiplicadorPrecio: number
 ): Promise<{ resultado: ResultadoDocumento; modelo: string }> {
-  const { emparejados, filasSueltas, vinosSueltos } = emparejar(inv.filas, vinos);
+  const { emparejados, filasSueltas, vinosSueltos, filasRepetidas } = emparejar(inv.filas, vinos);
   let modelo = "matching-determinista";
   const paresExtra: { fila: FilaExcel; vino: Vino }[] = [];
   const clasifNuevas = new Map<number, { tipo?: string; pais?: string; uva?: string }>();
@@ -302,8 +302,19 @@ REGLAS:
     }
   }
 
+  // Filas repetidas dentro del propio Excel: se avisa y no se duplican
+  for (const f of filasRepetidas) {
+    resultado.no_encontrados!.push({
+      texto: `Fila ${f.fila}: «${f.bodega} ${f.nombre}${f.anio ? ` (${f.anio})` : ""}» está repetida en el Excel — solo se cuenta la primera aparición`,
+      qty: f.stock,
+    });
+  }
+
   for (const f of filasNuevas) {
     if (f.stock <= 0 && !f.precioVenta && !f.precioCompra) continue;
+    // Antes de crearla, ¿se parece mucho a algo que ya existe? Los duplicados
+    // del 02/08 nacieron de crear referencias sin este aviso.
+    const sospecha = posibleDuplicado(f, vinos);
     const clasif = clasifNuevas.get(f.fila) ?? {};
     const tipoVino = TIPOS_VINO.includes(clasif.tipo as TipoVino)
       ? (clasif.tipo as TipoVino)
@@ -335,6 +346,10 @@ REGLAS:
       etiqueta: `${f.bodega} — ${nombreConTalla}${f.anio ? ` (${f.anio})` : ""}`,
       detalle: `Referencia nueva · ${tipoVino}${clasif.pais ? ` · ${clasif.pais}` : ""}${
         notaPrecio || (precio > 0 ? ` · ${precio}€` : " · precio pendiente")
+      }${
+        sospecha
+          ? ` · ⚠ parecida a «${sospecha.vino.bodega} ${sospecha.vino.nombre}${sospecha.vino.anio ? ` (${sospecha.vino.anio})` : ""}» — comprueba que no sea la misma`
+          : ""
       }`,
       qty: `+${f.stock}`,
       direccion: "plus",
