@@ -204,6 +204,32 @@ export default function DocumentosPage() {
     handleFile(e.dataTransfer.files[0]);
   }
 
+  /** Reabre un documento sin aplicar (p. ej. el cierre que deja el cron cada
+   *  madrugada) en el panel de revisión. Sin esto, los cierres automáticos
+   *  llegaban a la lista pero no había forma de revisarlos ni aplicarlos. */
+  async function revisar(d: DocumentoRow) {
+    if (d.aplicado || !d.resultado || processing) return;
+    setError("");
+    cerrarVista();
+    setSugOk(new Set());
+    setManual(new Map());
+    setPending({
+      documento_id: d.id,
+      resultado: d.resultado,
+      fileName: d.nombre_archivo,
+      tipo: d.tipo,
+    });
+    if ((d.tipo === "carta" || d.tipo === "cierre") && !catalogo.length) {
+      const { data: vs } = await supabase
+        .from("vinos")
+        .select("id, bodega, nombre, anio, precio, stock")
+        .eq("activo", true)
+        .order("bodega");
+      setCatalogo((vs as VinoBusca[]) || []);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function triggerFileInput() {
     if (docType === "excel") {
       if (fileExcelRef.current) {
@@ -785,34 +811,89 @@ export default function DocumentosPage() {
           </div>
         </div>
 
-        {history.length > 0 && (
-          <>
-            <div className="section-label">Documentos procesados</div>
-            <div className="doc-history">
-              {history.map((d) => {
-                const nm = d.resultado?.movimientos?.length ?? 0;
-                const nn = d.resultado?.nuevas_referencias?.length ?? 0;
-                const ne = d.resultado?.no_encontrados?.length ?? 0;
-                return (
-                  <div className="dh-item" key={d.id}>
-                    <div className="dh-top">
-                      <span className="dh-name">{d.nombre_archivo}</span>
-                      <span className={`dh-type ${d.tipo}`}>{TIPO_LABEL[d.tipo]}</span>
-                    </div>
-                    <div className="dh-meta">
-                      {fmtFecha(d.created_at)} ·{" "}
-                      {d.aplicado
-                        ? `${nm} movs aplicados${nn ? ` · ${nn} nuevas` : ""}`
-                        : "sin aplicar"}
-                      {ne ? ` · ${ne} sin id.` : ""}
-                      {d.modelo_ia ? ` · ${d.modelo_ia}` : ""}
-                    </div>
+        {(() => {
+          // Un documento cuenta como pendiente si no está aplicado y trae algo
+          // que aplicar (los cierres del cron, un albarán a medio revisar…)
+          const tieneContenido = (d: DocumentoRow) =>
+            (d.resultado?.movimientos?.length ?? 0) +
+              (d.resultado?.tpv_items?.length ?? 0) +
+              (d.resultado?.carta_sugerencias?.length ?? 0) +
+              (d.resultado?.nuevas_referencias?.length ?? 0) +
+              (d.resultado?.carta_items?.length ?? 0) >
+            0;
+          const pendientes = history.filter(
+            (d) => !d.aplicado && tieneContenido(d) && d.id !== pending?.documento_id
+          );
+          const resumen = (d: DocumentoRow) => {
+            const r = d.resultado;
+            if (d.tipo === "cierre") {
+              const bot = (r?.tpv_items ?? []).reduce((s, i) => s + Math.abs(i.qty), 0);
+              const sug = r?.carta_sugerencias?.length ?? 0;
+              return `${r?.tpv_items?.length ?? 0} vinos · ${bot} botellas${sug ? ` · ${sug} por confirmar` : ""}`;
+            }
+            const nm = r?.movimientos?.length ?? 0;
+            const nn = r?.nuevas_referencias?.length ?? 0;
+            return `${nm} movimientos${nn ? ` · ${nn} nuevas` : ""}`;
+          };
+          return (
+            <>
+              {pendientes.length > 0 && (
+                <>
+                  <div className="section-label">
+                    Pendientes de revisar ({pendientes.length})
                   </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+                  <div className="doc-history">
+                    {pendientes.map((d) => (
+                      <div className="dh-item dh-pendiente" key={d.id}>
+                        <div className="dh-top">
+                          <span className="dh-name">{d.nombre_archivo}</span>
+                          <span className={`dh-type ${d.tipo}`}>{TIPO_LABEL[d.tipo]}</span>
+                        </div>
+                        <div className="dh-meta">
+                          {fmtFecha(d.created_at)} · {resumen(d)}
+                        </div>
+                        <button className="dh-revisar" onClick={() => revisar(d)}>
+                          Revisar y aplicar →
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {history.length > 0 && (
+                <>
+                  <div className="section-label">Documentos procesados</div>
+                  <div className="doc-history">
+                    {history
+                      .filter((d) => !pendientes.includes(d))
+                      .map((d) => {
+                        const nm = d.resultado?.movimientos?.length ?? 0;
+                        const nn = d.resultado?.nuevas_referencias?.length ?? 0;
+                        const ne = d.resultado?.no_encontrados?.length ?? 0;
+                        return (
+                          <div className="dh-item" key={d.id}>
+                            <div className="dh-top">
+                              <span className="dh-name">{d.nombre_archivo}</span>
+                              <span className={`dh-type ${d.tipo}`}>{TIPO_LABEL[d.tipo]}</span>
+                            </div>
+                            <div className="dh-meta">
+                              {fmtFecha(d.created_at)} ·{" "}
+                              {d.aplicado
+                                ? `${nm} movs aplicados${nn ? ` · ${nn} nuevas` : ""}`
+                                : "sin aplicar"}
+                              {ne ? ` · ${ne} sin id.` : ""}
+                              {d.modelo_ia ? ` · ${d.modelo_ia}` : ""}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </>
+              )}
+            </>
+          );
+        })()}
       </div>
     </>
   );
