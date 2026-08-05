@@ -15,6 +15,13 @@ export type LineaVenta = {
 /** Ventas por copa: no descuentan una botella entera del inventario */
 export const ES_COPA = /\bcopas?\b|\bby the glass\b|\bcata\b/i;
 
+/** Artículos del TPV que claramente NO son vino (cafés, aguas, cócteles,
+ *  cervezas, postres…). Sólo se usa para no enseñarlos en la revisión del
+ *  cierre: el que revisa quiere ver vinos, no la carta de cafés. Si algo se
+ *  filtra de más, el botón «ver todo» de la revisión lo enseña igualmente. */
+export const ES_OTRO_ARTICULO =
+  /\b(cafes?|café|capp?uc+ino|cortado|espresso|descafeinado|latte|te|té|infusi[oó]n(es)?|manzanilla|poleo|rooibos|earl grey|aguas?|badoit|evian|vichy|t[oó]nicas?|cola|fanta|sprite|aquarius|refrescos?|zumos?|nestea|red\s?bull|cervezas?|caña|jarra|heineken|estrella|mahou|alhambra|corona|damm|ipa|lager|gin|ginebra|vodka|whisky|whiskey|bourbon|tequila|mezcal|licor|orujo|baileys|vermut|vermouth|campari|aperol|spritz|mojito|margarita|daiquiri|negroni|martini|caipirinha|paloma|penicillin|old fashioned|espresso martini|c[oó]ctel|cocktail|chupito|combinado|sangr[íi]a|tinto de verano|rebujito|postres?|helados?|sorbete|tartas?|coulant|cheesecake|baba|brownie|flan|fruta|menú|menu|cubiertos?|servicio|pan)\b/i;
+
 /** Muchas copas no llevan "COPA" en el nombre. Señal fiable: el precio
  *  unitario cobrado es muy inferior al precio de botella de la carta.
  *  Verificado con un año de ventas: las botellas reales se cobran al

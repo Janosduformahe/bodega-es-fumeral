@@ -11,6 +11,7 @@ import {
   IconWine,
 } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
+import { ES_OTRO_ARTICULO } from "@/lib/ventas-tpv";
 import {
   fmtFecha,
   type DocumentoRow,
@@ -108,6 +109,8 @@ export default function DocumentosPage() {
     nombre: string;
     tipo: "pdf" | "imagen" | "hoja";
   } | null>(null);
+  // En cierres, enseñar también la comida y bebida que no es vino
+  const [verTodo, setVerTodo] = useState(false);
   // Revisión de la carta: sugerencias aceptadas y resoluciones manuales
   const [sugOk, setSugOk] = useState<Set<number>>(new Set());
   const [manual, setManual] = useState<Map<string, VinoBusca>>(new Map());
@@ -177,6 +180,7 @@ export default function DocumentosPage() {
       addLog("✓ Documento leído. Revisa la previsualización.");
       setSugOk(new Set());
       setManual(new Map());
+      setVerTodo(false);
       setPending({
         documento_id: data.documento_id,
         resultado: data.resultado,
@@ -213,6 +217,7 @@ export default function DocumentosPage() {
     cerrarVista();
     setSugOk(new Set());
     setManual(new Map());
+    setVerTodo(false);
     setPending({
       documento_id: d.id,
       resultado: d.resultado,
@@ -337,6 +342,20 @@ export default function DocumentosPage() {
     if (!pending) return;
     if (pending.tipo === "carta") return aplicarCarta();
     if (esTpv()) return aplicarTpv();
+    // Un albarán real tiene 5-20 líneas. Uno con decenas es casi seguro un
+    // inventario completo subido por la vía equivocada: aplicarlo SUMARÍA todo
+    // el recuento al stock como si fuera una compra (pasó el 04/08: +1.371).
+    const lineas =
+      (pending.resultado.movimientos?.length ?? 0) +
+      (pending.resultado.nuevas_referencias?.length ?? 0);
+    if (pending.tipo === "albaran" && lineas > 40) {
+      if (
+        !confirm(
+          `⚠ Este albarán tiene ${lineas} líneas.\n\nUn albarán normal tiene menos de 20: esto parece un INVENTARIO completo. Si lo aplicas, se SUMARÁN todas esas botellas al stock como si fueran una compra.\n\nSi es el recuento del inventario, cancela y súbelo con el tipo «Excel».\n\n¿Aplicar de todas formas?`
+        )
+      )
+        return;
+    }
     setApplying(true);
     const { data, error } = await supabase.rpc("aplicar_documento", {
       p_documento_id: pending.documento_id,
@@ -364,6 +383,21 @@ export default function DocumentosPage() {
     );
     setPending(null);
     cerrarVista();
+    loadHistory();
+  }
+
+  /** Elimina un documento sin aplicar (pruebas, duplicados…). La política de
+   *  la base de datos solo permite borrar documentos no aplicados. */
+  async function eliminarDoc(d: DocumentoRow) {
+    if (d.aplicado) return;
+    if (!confirm(`¿Eliminar "${d.nombre_archivo}"?\n\nNo se ha aplicado nada al inventario; solo desaparece de la lista.`))
+      return;
+    const { error } = await supabase.from("documentos").delete().eq("id", d.id);
+    if (error) {
+      setError("No se pudo eliminar: " + error.message);
+      return;
+    }
+    if (pending?.documento_id === d.id) setPending(null);
     loadHistory();
   }
 
@@ -647,55 +681,74 @@ export default function DocumentosPage() {
 
                   {(r.carta_sin_casar ?? []).length > 0 && (
                     <div className="rev-sec">
-                      <div className="rev-head">
-                        No están en el inventario ({(r.carta_sin_casar ?? []).length})
-                        <span className="rev-sub">
-                          Búscalas si crees que sí están con otro nombre
-                        </span>
-                      </div>
-                      {(r.carta_sin_casar ?? []).map((l) => {
-                        const elegido = manual.get(l.texto);
+                      {(() => {
+                        // En un cierre, la mayoría de líneas sin casar es comida
+                        // y bebida ajena a la bodega: se ocultan por defecto
+                        const todas = r.carta_sin_casar ?? [];
+                        const otras = esTpv() && !verTodo
+                          ? todas.filter((l) => ES_OTRO_ARTICULO.test(l.texto))
+                          : [];
+                        const visibles = todas.filter((l) => !otras.includes(l));
                         return (
-                          <div className="manual-item" key={l.texto}>
-                            <div className="manual-linea">
-                              <span className="manual-carta">{l.texto}</span>
-                              {l.precio ? (
-                                <span className="manual-precio">{l.precio}€</span>
-                              ) : null}
+                          <>
+                            <div className="rev-head">
+                              No están en el inventario ({visibles.length})
+                              <span className="rev-sub">
+                                Búscalas si crees que sí están con otro nombre
+                              </span>
                             </div>
-                            {l.nota && <div className="manual-nota">{l.nota}</div>}
-                            {elegido ? (
-                              <div className="manual-elegido">
-                                ✓ {etiquetaVino(elegido)}
-                                <button
-                                  className="manual-quitar"
-                                  onClick={() =>
-                                    setManual((prev) => {
-                                      const n = new Map(prev);
-                                      n.delete(l.texto);
-                                      return n;
-                                    })
-                                  }
-                                >
-                                  quitar
-                                </button>
-                              </div>
-                            ) : (
-                              <BuscadorVino
-                                catalogo={catalogo}
-                                excluidos={
-                                  new Set(itemsCarta().map((i) => i.vino_id))
-                                }
-                                onPick={(v) =>
-                                  setManual((prev) =>
-                                    new Map(prev).set(l.texto, v)
-                                  )
-                                }
-                              />
+                            {otras.length > 0 && (
+                              <button className="rev-otros" onClick={() => setVerTodo(true)}>
+                                {otras.length} artículos de comida y bebida ocultos
+                                (cafés, cócteles, aguas…) — ver todos
+                              </button>
                             )}
-                          </div>
+                            {visibles.map((l) => {
+                              const elegido = manual.get(l.texto);
+                              return (
+                                <div className="manual-item" key={l.texto}>
+                                  <div className="manual-linea">
+                                    <span className="manual-carta">{l.texto}</span>
+                                    {l.precio ? (
+                                      <span className="manual-precio">{l.precio}€</span>
+                                    ) : null}
+                                  </div>
+                                  {l.nota && <div className="manual-nota">{l.nota}</div>}
+                                  {elegido ? (
+                                    <div className="manual-elegido">
+                                      ✓ {etiquetaVino(elegido)}
+                                      <button
+                                        className="manual-quitar"
+                                        onClick={() =>
+                                          setManual((prev) => {
+                                            const n = new Map(prev);
+                                            n.delete(l.texto);
+                                            return n;
+                                          })
+                                        }
+                                      >
+                                        quitar
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <BuscadorVino
+                                      catalogo={catalogo}
+                                      excluidos={
+                                        new Set(itemsCarta().map((i) => i.vino_id))
+                                      }
+                                      onPick={(v) =>
+                                        setManual((prev) =>
+                                          new Map(prev).set(l.texto, v)
+                                        )
+                                      }
+                                    />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </>
                         );
-                      })}
+                      })()}
                     </div>
                   )}
 
@@ -852,9 +905,14 @@ export default function DocumentosPage() {
                         <div className="dh-meta">
                           {fmtFecha(d.created_at)} · {resumen(d)}
                         </div>
-                        <button className="dh-revisar" onClick={() => revisar(d)}>
-                          Revisar y aplicar →
-                        </button>
+                        <div className="dh-acciones">
+                          <button className="dh-eliminar" onClick={() => eliminarDoc(d)}>
+                            Eliminar
+                          </button>
+                          <button className="dh-revisar" onClick={() => revisar(d)}>
+                            Revisar y aplicar →
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
