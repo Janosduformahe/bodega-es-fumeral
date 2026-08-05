@@ -1,5 +1,5 @@
 export type TipoVino = "Espumoso" | "Blanco" | "Rosado" | "Tinto" | "Dulce";
-export type TipoMovimiento = "venta" | "entrada" | "excel" | "ajuste";
+export type TipoMovimiento = "venta" | "entrada" | "excel" | "ajuste" | "merma";
 export type TipoDocumento = "albaran" | "cierre" | "excel" | "carta";
 
 export type Vino = {

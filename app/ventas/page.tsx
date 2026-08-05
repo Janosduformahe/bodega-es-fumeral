@@ -56,6 +56,10 @@ export default function VentasPage() {
   const [conAjustes, setConAjustes] = useState(false);
   const [ventas, setVentas] = useState<VentaRow[] | null>(null);
   const [vinos, setVinos] = useState<Vino[]>([]);
+  const [mermas, setMermas] = useState<{ botellas: number; coste: number }>({
+    botellas: 0,
+    coste: 0,
+  });
 
   useEffect(() => {
     supabase
@@ -71,12 +75,31 @@ export default function VentasPage() {
       .from("movimientos")
       .select("vino_id, qty, tipo, created_at, precio_unit, coste_unit")
       .lt("qty", 0);
+    // las mermas nunca son ventas: tienen su propia tarjeta
     if (!conAjustes) q = q.eq("tipo", "venta");
+    else q = q.neq("tipo", "merma");
     if (dias > 0) {
       q = q.gte("created_at", new Date(Date.now() - dias * 86400000).toISOString());
     }
     q.limit(10000).then(({ data }) => {
       if (!cancelado) setVentas((data as VentaRow[]) || []);
+    });
+
+    let qm = supabase
+      .from("movimientos")
+      .select("qty, coste_unit")
+      .eq("tipo", "merma")
+      .lt("qty", 0);
+    if (dias > 0) {
+      qm = qm.gte("created_at", new Date(Date.now() - dias * 86400000).toISOString());
+    }
+    qm.limit(2000).then(({ data }) => {
+      if (cancelado) return;
+      const rows = (data ?? []) as { qty: number; coste_unit: number | null }[];
+      setMermas({
+        botellas: rows.reduce((s, m) => s - m.qty, 0),
+        coste: rows.reduce((s, m) => s + -m.qty * Number(m.coste_unit ?? 0), 0),
+      });
     });
     return () => {
       cancelado = true;
@@ -288,6 +311,15 @@ export default function VentasPage() {
             <div className="stat-label">Margen medio</div>
             <div className="stat-value figura">{margenMedio}%</div>
           </div>
+          {mermas.botellas > 0 && (
+            <div className="stat">
+              <div className="stat-label">Mermas</div>
+              <div className="stat-value figura" style={{ color: "var(--red)" }}>
+                {num(mermas.botellas)} bot.
+              </div>
+              <div className="stat-sub">{eur(mermas.coste)} a coste</div>
+            </div>
+          )}
         </div>
 
         {ventas === null ? (

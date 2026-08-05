@@ -122,9 +122,11 @@ export default function InventarioPage() {
   const [sortBy, setSortBy] = useState("bodega");
   const [sheet, setSheet] = useState<null | "filtros">(null);
 
-  const [modal, setModal] = useState<{ mode: "venta" | "entrada"; vino: Vino } | null>(null);
+  const [modal, setModal] = useState<{ mode: "venta" | "entrada" | "merma"; vino: Vino } | null>(null);
   const [mQty, setMQty] = useState("1");
   const [mNote, setMNote] = useState("");
+  // Motivo de la merma: obligatorio, para que el análisis distinga rotura de corcho
+  const [mMotivo, setMMotivo] = useState("");
   const [saving, setSaving] = useState(false);
   const qtyRef = useRef<HTMLInputElement>(null);
 
@@ -215,16 +217,24 @@ export default function InventarioPage() {
     if (!modal) return;
     const qty = parseInt(mQty) || 0;
     if (qty <= 0) return;
-    if (modal.mode === "venta" && qty > modal.vino.stock) {
+    const esSalida = modal.mode === "venta" || modal.mode === "merma";
+    if (esSalida && qty > modal.vino.stock) {
       alert(`Solo hay ${modal.vino.stock} botellas`);
+      return;
+    }
+    if (modal.mode === "merma" && !mMotivo) {
+      alert("Indica el motivo de la merma");
       return;
     }
     setSaving(true);
     const { data, error } = await supabase.rpc("registrar_movimiento", {
       p_vino_id: modal.vino.id,
       p_tipo: modal.mode,
-      p_qty: modal.mode === "venta" ? -qty : qty,
-      p_nota: mNote.trim() || null,
+      p_qty: esSalida ? -qty : qty,
+      p_nota:
+        modal.mode === "merma"
+          ? [mMotivo, mNote.trim()].filter(Boolean).join(" · ")
+          : mNote.trim() || null,
     });
     setSaving(false);
     if (error) {
@@ -237,6 +247,7 @@ export default function InventarioPage() {
     setModal(null);
     setMQty("1");
     setMNote("");
+    setMMotivo("");
   }
 
   async function darDeBaja(vino: Vino) {
@@ -394,6 +405,22 @@ export default function InventarioPage() {
               onClick={() => setModal({ mode: "entrada", vino: w })}
             >
               +
+            </button>
+            <button
+              className="btn-merma"
+              title="Merma (botella rota o en mal estado)"
+              aria-label={`Registrar merma de ${w.bodega} ${w.nombre}`}
+              onClick={() => {
+                setMMotivo("");
+                setModal({ mode: "merma", vino: w });
+              }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M8 22h8" />
+                <path d="M12 15v7" />
+                <path d="M7 2h10l-1 6.5a4.5 4.5 0 0 1-8 0z" />
+                <path d="m10 5 1.5 2L13 4.5 14.5 7" />
+              </svg>
             </button>
           </div>
         </div>
@@ -699,11 +726,19 @@ export default function InventarioPage() {
           <div className="modal">
             <div className="grabber" aria-hidden="true" />
             <div className="modal-title">
-              {modal.mode === "venta" ? "Registrar venta" : "Registrar entrada"}
+              {modal.mode === "venta"
+                ? "Registrar venta"
+                : modal.mode === "entrada"
+                  ? "Registrar entrada"
+                  : "Registrar merma"}
             </div>
             <div className="modal-sub">{nombreVino(modal.vino)}</div>
             <label className="modal-label">
-              {modal.mode === "venta" ? "Botellas vendidas" : "Botellas recibidas"}
+              {modal.mode === "venta"
+                ? "Botellas vendidas"
+                : modal.mode === "entrada"
+                  ? "Botellas recibidas"
+                  : "Botellas perdidas"}
             </label>
             <input
               ref={qtyRef}
@@ -714,26 +749,67 @@ export default function InventarioPage() {
               value={mQty}
               onChange={(e) => setMQty(e.target.value)}
             />
+            {modal.mode === "merma" && (
+              <>
+                <label className="modal-label" style={{ marginTop: -6 }}>
+                  ¿Qué ha pasado?
+                </label>
+                <div className="merma-motivos">
+                  {["Rota", "En mal estado", "Derrame", "Invitación", "Otro"].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      className={`merma-motivo${mMotivo === m ? " on" : ""}`}
+                      onClick={() => setMMotivo(m)}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
             <label className="modal-label" style={{ marginTop: -6 }}>
               Nota (opcional)
             </label>
             <input
               className="modal-note"
               type="text"
-              placeholder="Mesa, proveedor, evento…"
+              placeholder={
+                modal.mode === "merma"
+                  ? "Cómo ha sido, quién lo vio…"
+                  : "Mesa, proveedor, evento…"
+              }
               value={mNote}
               onChange={(e) => setMNote(e.target.value)}
             />
+            {modal.mode === "merma" && modal.vino.precio_compra != null && (
+              <div className="merma-coste">
+                Coste de la pérdida:{" "}
+                <strong>
+                  {(
+                    (parseInt(mQty) || 0) * Number(modal.vino.precio_compra)
+                  ).toLocaleString("es-ES", { maximumFractionDigits: 0 })}{" "}
+                  €
+                </strong>{" "}
+                a precio de compra
+              </div>
+            )}
             <div className="modal-btns">
               <button className="btn-cancel" onClick={() => setModal(null)}>
                 Cancelar
               </button>
-              <button className="btn-confirm" onClick={confirmMovimiento} disabled={saving}>
+              <button
+                className={modal.mode === "merma" ? "btn-confirm merma" : "btn-confirm"}
+                onClick={confirmMovimiento}
+                disabled={saving || (modal.mode === "merma" && !mMotivo)}
+              >
                 {saving
                   ? "Guardando…"
                   : modal.mode === "venta"
                     ? "Confirmar venta"
-                    : "Confirmar entrada"}
+                    : modal.mode === "entrada"
+                      ? "Confirmar entrada"
+                      : "Confirmar merma"}
               </button>
             </div>
           </div>

@@ -147,6 +147,16 @@ input[type=search]::placeholder{color:var(--hint);font-weight:400}
 .btn-v{color:var(--red)}
 .btn-e{color:var(--green)}
 .btn-v:active,.btn-e:active{transform:scale(.93)}
+/* Merma: botella rota, corcho, derrame… más discreto que vender/recibir */
+.btn-merma{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--border);background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;transition:transform .1s}
+.btn-merma:active{transform:scale(.93)}
+.merma-motivos{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.merma-motivo{border:1.5px solid var(--border);background:var(--surface);border-radius:99px;font-size:14px;font-weight:600;color:var(--text);padding:9px 14px}
+.merma-motivo.on{background:var(--redbg);border-color:var(--red);color:var(--red);font-weight:700}
+.merma-coste{font-size:13.5px;color:var(--muted);background:var(--redbg);border-radius:var(--radius-sm);padding:10px 13px;margin-bottom:14px}
+.merma-coste strong{color:var(--red)}
+.btn-confirm.merma{background:var(--red)}
+.stat-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
 .btn-h{width:44px;height:44px;border-radius:50%;border:none;background:none;color:var(--hint);display:flex;align-items:center;justify-content:center;transition:color .15s,background-color .15s}
 .stock-ok{color:var(--green)}
 .stock-low{color:var(--amber)}

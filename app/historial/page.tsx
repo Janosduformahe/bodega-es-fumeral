@@ -9,6 +9,14 @@ type MovConVino = Movimiento & {
   vinos: { bodega: string; nombre: string; anio: number | null } | null;
 };
 
+const TIPO_MOV: Record<string, string> = {
+  venta: "venta",
+  entrada: "entrada",
+  excel: "inventario",
+  ajuste: "ajuste",
+  merma: "⚠ merma",
+};
+
 export default function HistorialPage() {
   const supabase = useMemo(() => createClient(), []);
   const [rows, setRows] = useState<MovConVino[] | null>(null);
@@ -52,7 +60,8 @@ export default function HistorialPage() {
                   </div>
                 </div>
                 <div className="wc-meta">
-                  {h.tipo} · {h.stock_prev}→{h.stock_nuevo} · {fmtFecha(h.created_at)}
+                  {TIPO_MOV[h.tipo] ?? h.tipo} · {h.stock_prev}→{h.stock_nuevo} ·{" "}
+                  {fmtFecha(h.created_at)}
                   {h.nota ? ` · ${h.nota}` : ""}
                 </div>
               </div>
