@@ -33,6 +33,8 @@ import type { Vino } from "../lib/types";
     if (m.documento_id === 31) continue;
     if ((m.nota ?? "").startsWith("Reversión de entrada fantasma")) continue;
     if ((m.nota ?? "").startsWith("Reimportación inventario 02/08")) continue;
+    if ((m.nota ?? "").startsWith("Alta desde el inventario 02/08")) continue;
+    if ((m.nota ?? "").startsWith("Reactivada: vuelve a contarse")) continue;
     delta.set(m.vino_id, (delta.get(m.vino_id) ?? 0) + m.qty);
   }
 
