@@ -2,6 +2,7 @@
 import { jsonrepair } from "jsonrepair";
 import * as XLSX from "xlsx";
 import {
+  coberturaLinea,
   emparejarCarta,
   mismaReferenciaOtraAnada,
   promptExtraerCarta,
@@ -846,11 +847,13 @@ export async function POST(req: NextRequest) {
         else pendientes.push(l);
       }
 
-      // 2) Emparejado determinista (añada y magnum cuentan como siempre)
+      // 2) Emparejado determinista (añada y magnum cuentan como siempre).
+      // Auto solo si además el vino cubre la línea ENTERA: un "1er Cru
+      // Poruzot" no puede sumarse solo a un "1er Cru Les Narvaux".
       const { casados, sinCasar } = emparejarCarta(pendientes, vinos, UMBRAL_SUGERENCIA);
       for (const c of casados) {
         const l = pendientes.find((x) => x.texto === c.linea.texto)!;
-        if (c.score >= UMBRAL_AUTO) {
+        if (c.score >= UMBRAL_AUTO && coberturaLinea(c.linea, c.vino) >= 0.8) {
           entrada(c.vino.id, l, "");
         } else {
           resultado.no_encontrados!.push({

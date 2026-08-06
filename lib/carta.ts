@@ -131,6 +131,16 @@ export function puntuar(
   return Math.min(1, score);
 }
 
+/** Qué parte de los tokens de la línea cubre el vino (0..1). Un 1er Cru
+ *  concreto ("Poruzot") nunca debe auto-casar con otra parcela ("Narvaux")
+ *  aunque bodega y pueblo coincidan: esa cobertura parcial delata el error. */
+export function coberturaLinea(linea: LineaCarta, v: Vino): number {
+  const tsL = tokens([linea.bodega, linea.nombre, linea.texto].filter(Boolean).join(" "));
+  const tsV = tokens(`${v.bodega} ${v.nombre}`);
+  if (!tsL.length) return 0;
+  return comunes(tsL, tsV) / tsL.length;
+}
+
 /** ¿La línea es un vino que sí está en el catálogo pero con otra añada? */
 export function mismaReferenciaOtraAnada(
   linea: LineaCarta,

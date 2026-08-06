@@ -35,6 +35,10 @@ import type { Vino } from "../lib/types";
     if ((m.nota ?? "").startsWith("Reimportación inventario 02/08")) continue;
     if ((m.nota ?? "").startsWith("Alta desde el inventario 02/08")) continue;
     if ((m.nota ?? "").startsWith("Reactivada: vuelve a contarse")) continue;
+    // Las fusiones mueven botellas que YA están en la foto del excel (venían
+    // de una referencia duplicada creada por el propio excel): no son delta.
+    if ((m.nota ?? "").startsWith("Fusión de referencia duplicada")) continue;
+    if ((m.nota ?? "").startsWith("Corrección: la fusión del 04/08")) continue;
     delta.set(m.vino_id, (delta.get(m.vino_id) ?? 0) + m.qty);
   }
 
