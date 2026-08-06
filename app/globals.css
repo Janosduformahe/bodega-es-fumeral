@@ -177,6 +177,7 @@ input[type=search]::placeholder{color:var(--hint);font-weight:400}
 .doc-zone-icon{display:flex;justify-content:center;margin-bottom:12px;color:var(--brand)}
 .doc-zone-title{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:5px}
 .doc-zone-sub{font-size:13.5px;color:var(--muted)}
+.doc-foto{margin-top:16px;background:var(--brand);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15.5px;font-weight:700;height:50px;padding:0 22px}
 .doc-type-row{display:grid;gap:10px;margin:0 16px 14px}
 .doc-type-btn{padding:16px 10px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);text-align:center;transition:border-color .15s,background-color .15s;box-shadow:var(--shadow-sm)}
 .doc-type-btn .dt-icon{display:flex;justify-content:center;margin-bottom:7px;color:var(--muted)}
@@ -271,6 +272,7 @@ input[type=search]::placeholder{color:var(--hint);font-weight:400}
 .dh-acciones{display:flex;gap:8px;margin-top:10px}
 .dh-revisar{flex:1;background:var(--sand-act);border:none;border-radius:var(--radius-sm);color:var(--brand);font-size:14.5px;font-weight:700;height:44px;text-align:center}
 .dh-eliminar{background:none;border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--muted);font-size:13.5px;font-weight:600;height:44px;padding:0 14px}
+.dr-duplicado{background:var(--redbg);border:1.5px solid var(--redborder);color:var(--red);border-radius:var(--radius-sm);padding:11px 13px;font-size:13.5px;font-weight:600;line-height:1.45;margin-bottom:10px}
 /* Comida y bebida ocultas en la revisión de un cierre */
 .rev-otros{display:block;width:100%;background:var(--sand-act);border:none;border-radius:var(--radius-sm);color:var(--muted2);font-size:13.5px;font-weight:600;padding:11px 14px;margin-bottom:10px;text-align:left}
 .dh-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;gap:8px}

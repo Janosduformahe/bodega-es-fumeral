@@ -840,6 +840,38 @@ export async function POST(req: NextRequest) {
     modeloFinal = modelo;
     }
 
+    // ¿Este albarán ya se subió? Mismo fichero (nombre) o mismo proveedor con
+    // el mismo número de líneas en las últimas 2 semanas ⇒ probable duplicado.
+    // Aplicarlo dos veces sumaría las botellas dos veces.
+    if (tipo === "albaran") {
+      const desde = new Date(Date.now() - 14 * 86400000).toISOString();
+      const { data: previos } = await supabase
+        .from("documentos")
+        .select("id, nombre_archivo, aplicado, created_at, resultado")
+        .eq("tipo", "albaran")
+        .gte("created_at", desde)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      const nLineas =
+        (resultadoFinal.movimientos?.length ?? 0) +
+        (resultadoFinal.nuevas_referencias?.length ?? 0);
+      const dup = (previos ?? []).find((d) => {
+        if (d.nombre_archivo === file.name) return true;
+        const r = d.resultado as ResultadoDocumento | null;
+        const prevLineas =
+          (r?.movimientos?.length ?? 0) + (r?.nuevas_referencias?.length ?? 0);
+        return (
+          !!resultadoFinal.proveedor_o_fecha &&
+          r?.proveedor_o_fecha === resultadoFinal.proveedor_o_fecha &&
+          prevLineas === nLineas &&
+          nLineas > 0
+        );
+      });
+      if (dup) {
+        resultadoFinal.aviso_duplicado = `Este albarán se parece a "${dup.nombre_archivo}" subido el ${new Date(dup.created_at).toLocaleDateString("es-ES")}${dup.aplicado ? " y YA APLICADO" : " (sin aplicar)"}. Si es el mismo, no lo apliques dos veces.`;
+      }
+    }
+
     // Guardar el archivo original en Storage (auditoría)
     const storagePath = `${Date.now()}_${file.name.replace(/[^\w.\-]/g, "_")}`;
     await supabase.storage.from("documentos").upload(storagePath, buffer, {

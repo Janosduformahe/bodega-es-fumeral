@@ -74,6 +74,8 @@ export type ResultadoDocumento = {
   }[];
   /** Cierres de TPV: movimientos casados con certeza, con su texto de origen */
   tpv_items?: { vino_id: number; qty: number; texto: string }[];
+  /** Aviso de que este albarán parece una re-subida de otro reciente */
+  aviso_duplicado?: string;
   /** Detalle de lo casado automáticamente (para aplicar precios y alias) */
   carta_items?: { vino_id: number; precio: number | null; texto: string }[];
   /** Referencias que el inventario sugiere retirar del catálogo */

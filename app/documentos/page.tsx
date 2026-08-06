@@ -118,6 +118,7 @@ export default function DocumentosPage() {
 
   const fileRef = useRef<HTMLInputElement>(null);
   const fileExcelRef = useRef<HTMLInputElement>(null);
+  const fileFotoRef = useRef<HTMLInputElement>(null);
 
   async function loadHistory() {
     const { data } = await supabase
@@ -526,6 +527,20 @@ export default function DocumentosPage() {
                   ? "CSV/Excel exportado del TPV (máxima precisión), PDF o foto"
                   : "PDF, imagen (JPG, PNG) o CSV/Excel del proveedor"}
           </div>
+          {docType !== "excel" && (
+            <button
+              className="doc-foto"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (fileFotoRef.current) {
+                  fileFotoRef.current.value = "";
+                  fileFotoRef.current.click();
+                }
+              }}
+            >
+              📷 Hacer una foto
+            </button>
+          )}
         </div>
         <input
           ref={fileRef}
@@ -537,6 +552,14 @@ export default function DocumentosPage() {
           ref={fileExcelRef}
           type="file"
           accept=".xlsx,.xls,.csv"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+        {/* En el móvil abre la cámara directamente */}
+        <input
+          ref={fileFotoRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
 
@@ -600,6 +623,9 @@ export default function DocumentosPage() {
           {pending && r && (
             <div className="doc-result">
               <div className="dr-header">
+                {r.aviso_duplicado && (
+                  <div className="dr-duplicado">⚠ {r.aviso_duplicado}</div>
+                )}
                 <div>
                   <div className="dr-title">
                     {pending.resultado.proveedor_o_fecha || pending.fileName}

@@ -1,7 +1,11 @@
 // Casado de las ventas del TPV (por API o por informe subido) con el catálogo.
 // Compartido por /api/documentos y por la sincronización automática.
-import { emparejarCarta } from "./carta";
+import { emparejarCarta, puntuar } from "./carta";
 import type { ResultadoDocumento, Vino } from "./types";
+
+/** Una botella da para ~5 copas: las ventas por copa descuentan la parte
+ *  proporcional, redondeada a botellas enteras (el stock es entero). */
+export const COPAS_POR_BOTELLA = 5;
 
 export type LineaVenta = {
   texto: string;
@@ -57,14 +61,51 @@ export function casarVentas(
   };
   const porId = new Map(vinos.map((v) => [v.id, v]));
 
-  // Las copas se informan pero nunca descuentan botellas
+  /** Copas → botellas equivalentes. Devuelve true si la línea queda resuelta. */
+  const descontarCopas = (l: LineaVenta, vino: Vino | null): boolean => {
+    if (!vino) return false;
+    const bot = Math.round(l.unidades / COPAS_POR_BOTELLA);
+    if (bot >= 1) {
+      resultado.tpv_items!.push({
+        vino_id: vino.id,
+        qty: -bot,
+        texto: `${l.texto} (${l.unidades} copas ≈ ${bot} bot.)`,
+      });
+    } else {
+      resultado.no_encontrados!.push({
+        texto: `${l.unidades} × "${l.texto}" — menos de ${COPAS_POR_BOTELLA} copas, no llega a una botella`,
+        qty: l.unidades,
+      });
+    }
+    return true;
+  };
+
+  /** Mejor vino para una línea de copa: primero el alias aprendido, luego el
+   *  texto sin la palabra "copa". Sin exclusividad 1:1 — el mismo vino puede
+   *  venderse por botella Y por copa el mismo día. */
+  const vinoDeCopa = (l: LineaVenta): Vino | null => {
+    const porAlias = alias.get(l.texto.toLowerCase().trim());
+    if (porAlias && porId.has(porAlias)) return porId.get(porAlias)!;
+    const texto = l.texto.replace(ES_COPA, " ").replace(/\s+/g, " ").trim();
+    if (!texto) return null;
+    let mejor: { s: number; v: Vino | null } = { s: 0, v: null };
+    for (const v of vinos) {
+      const s = puntuar({ texto }, v, false, true);
+      if (s > mejor.s) mejor = { s, v };
+    }
+    return mejor.s >= 0.55 ? mejor.v : null;
+  };
+
+  // Las copas descuentan la parte proporcional de botella
   const copas = lineas.filter((l) => ES_COPA.test(l.texto));
   const botellas = lineas.filter((l) => !ES_COPA.test(l.texto));
   for (const c of copas) {
-    resultado.no_encontrados!.push({
-      texto: `${c.unidades} × "${c.texto}" — venta por copa, no descuenta botella`,
-      qty: c.unidades,
-    });
+    if (!descontarCopas(c, vinoDeCopa(c))) {
+      resultado.no_encontrados!.push({
+        texto: `${c.unidades} × "${c.texto}" — venta por copa sin vino identificado`,
+        qty: c.unidades,
+      });
+    }
   }
 
   // 1) Nombres ya confirmados antes (o código del TPV ya mapeado)
@@ -98,13 +139,10 @@ export function casarVentas(
   for (const c of casados) {
     const qty = udsDe(c.linea.texto);
     const original = lineaDe(c.linea.texto);
-    // Copa encubierta: mismo vino, pero cobrado a precio de copa
+    // Copa encubierta: mismo vino, pero cobrado a precio de copa.
+    // Descuenta su parte proporcional de botella.
     if (original && pareceCopa(original, Number(c.vino.precio) || 0)) {
-      const unit = (original.importe ?? 0) / Math.max(1, original.unidades);
-      resultado.no_encontrados!.push({
-        texto: `${qty} × "${c.linea.texto}" a ${unit.toFixed(1)} € (botella ${c.vino.precio} €) — parece venta por copa, no se descuenta`,
-        qty,
-      });
+      descontarCopas(original, c.vino);
       continue;
     }
     if (c.score >= UMBRAL_AUTO) {
