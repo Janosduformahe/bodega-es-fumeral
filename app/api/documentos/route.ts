@@ -9,7 +9,7 @@ import {
 import { emparejar, parsearInventario, posibleDuplicado, type FilaExcel } from "@/lib/excel";
 import { parsearVentasTpv, type VentaTpv } from "@/lib/tpv";
 import { createClient } from "@/lib/supabase/server";
-import { promptAlbaranCierre, promptExcel } from "@/lib/prompts";
+import { promptAlbaranCierre, promptExcel, promptExtraerAlbaran } from "@/lib/prompts";
 import type { ResultadoDocumento, TipoVino, Vino } from "@/lib/types";
 
 export const maxDuration = 120; // la lectura IA de un PDF puede tardar
@@ -627,7 +627,14 @@ export async function POST(req: NextRequest) {
         mime === "application/pdf"
           ? { type: "file", file: { filename: file.name, file_data: dataUrl } }
           : { type: "image_url", image_url: { url: dataUrl } };
-      parts = [filePart, { type: "text", text: promptAlbaranCierre(tipo, vinos) }];
+      parts = [
+        filePart,
+        {
+          type: "text",
+          text:
+            tipo === "albaran" ? promptExtraerAlbaran() : promptAlbaranCierre(tipo, vinos),
+        },
+      ];
     }
 
     // Un Excel completo puede requerir ~300 actualizaciones en la respuesta:
@@ -795,6 +802,102 @@ export async function POST(req: NextRequest) {
       recogerNuevasReferencias(parsed, resultado, vinos, multiplicadorPrecio);
       const noId = (parsed.no_identificados ?? []) as { texto: string }[];
       resultado.no_encontrados = noId.map((x) => ({ texto: String(x.texto || "") }));
+    } else if (tipo === "albaran" && Array.isArray(parsed.lineas)) {
+      // La IA solo transcribe el albarán; el casado con el catálogo es
+      // determinista, igual que en la carta. Con el diseño anterior (la IA
+      // casaba contra 600 referencias) los albaranes volvían vacíos.
+      const lineasAlb = (parsed.lineas as Record<string, unknown>[])
+        .map((l) => ({
+          texto: String(l.texto ?? "").trim(),
+          bodega: l.bodega ? String(l.bodega) : null,
+          nombre: l.nombre ? String(l.nombre) : null,
+          anio: Number(l.anio) || null,
+          unidades: Math.max(0, Math.round(Number(l.unidades) || 0)),
+          precio_compra: Number(l.precio_compra) || null,
+          tipo: l.tipo,
+          pais: l.pais,
+          uva: l.uva,
+        }))
+        .filter((l) => (l.texto || l.nombre) && l.unidades > 0);
+      resultado.proveedor_o_fecha = String(parsed.proveedor || "");
+
+      // 1) Nombres ya confirmados en documentos anteriores
+      const { data: aliasRows } = await supabase
+        .from("alias_carta")
+        .select("texto_norm, vino_id");
+      const alias = new Map(
+        (aliasRows ?? []).map((a) => [a.texto_norm as string, a.vino_id as number])
+      );
+      const pendientes: typeof lineasAlb = [];
+      const entrada = (vinoId: number, l: (typeof lineasAlb)[number], via: string) => {
+        const w = porId.get(vinoId)!;
+        resultado.movimientos.push({ vino_id: vinoId, qty: l.unidades, nota: l.texto });
+        resultado.preview!.push({
+          vino_id: vinoId,
+          etiqueta: `${w.bodega} — ${w.nombre}${w.anio ? ` (${w.anio})` : ""}`,
+          detalle: `"${l.texto}"${via ? ` · ${via}` : ""}`,
+          qty: `+${l.unidades}`,
+          direccion: "plus",
+        });
+      };
+      for (const l of lineasAlb) {
+        const id = alias.get(l.texto.toLowerCase().trim());
+        if (id && porId.has(id)) entrada(id, l, "nombre ya conocido");
+        else pendientes.push(l);
+      }
+
+      // 2) Emparejado determinista (añada y magnum cuentan como siempre)
+      const { casados, sinCasar } = emparejarCarta(pendientes, vinos, UMBRAL_SUGERENCIA);
+      for (const c of casados) {
+        const l = pendientes.find((x) => x.texto === c.linea.texto)!;
+        if (c.score >= UMBRAL_AUTO) {
+          entrada(c.vino.id, l, "");
+        } else {
+          resultado.no_encontrados!.push({
+            texto: `${l.unidades} × "${l.texto}" — se parece a ${c.vino.bodega} — ${c.vino.nombre}${c.vino.anio ? ` (${c.vino.anio})` : ""} pero no es seguro: no se aplica solo`,
+            qty: l.unidades,
+          });
+        }
+      }
+
+      // 3) Lo que no está en el catálogo: alta nueva si la línea es clara
+      const candidatas = sinCasar
+        .map((s) => pendientes.find((x) => x.texto === s.texto))
+        .filter((l): l is (typeof lineasAlb)[number] => !!l);
+      recogerNuevasReferencias(
+        {
+          nuevas_referencias: candidatas
+            .filter((l) => l.bodega && l.nombre)
+            .map((l) => ({
+              anio: l.anio,
+              bodega: l.bodega,
+              nombre: l.nombre,
+              tipo: l.tipo,
+              pais: l.pais,
+              uva: l.uva,
+              precio: 0,
+              precio_compra: l.precio_compra,
+              stock: l.unidades,
+              texto_original: l.texto,
+            })),
+        },
+        resultado,
+        vinos,
+        multiplicadorPrecio
+      );
+      for (const l of candidatas.filter((x) => !x.bodega || !x.nombre)) {
+        resultado.no_encontrados!.push({
+          texto: `${l.unidades} × "${l.texto}" — sin identificar`,
+          qty: l.unidades,
+        });
+      }
+
+      if (!lineasAlb.length) {
+        resultado.no_encontrados!.push({
+          texto:
+            "⚠ No se encontró ninguna línea de vino en el documento. Compruébalo con «Ver original»: la foto puede estar cortada, borrosa o ser de otra cosa.",
+        });
+      }
     } else {
       const esAlbaran = tipo === "albaran";
       const items = (parsed.items ?? []) as {

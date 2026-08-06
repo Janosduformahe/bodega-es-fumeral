@@ -123,10 +123,23 @@ export default function DocumentosPage() {
   async function loadHistory() {
     const { data } = await supabase
       .from("documentos")
-      .select("id,tipo,nombre_archivo,modelo_ia,resultado,aplicado,created_at")
+      .select("id,tipo,nombre_archivo,modelo_ia,resultado,aplicado,created_at,storage_path")
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(100);
     setHistory((data as DocumentoRow[]) || []);
+  }
+
+  /** Abre el fichero original guardado en Storage (enlace firmado de 1 hora) */
+  async function verOriginal(d: DocumentoRow) {
+    if (!d.storage_path) return;
+    const { data, error } = await supabase.storage
+      .from("documentos")
+      .createSignedUrl(d.storage_path, 3600);
+    if (error || !data?.signedUrl) {
+      setError("No se pudo abrir el documento: " + (error?.message ?? ""));
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener");
   }
 
   useEffect(() => {
@@ -935,6 +948,11 @@ export default function DocumentosPage() {
                           <button className="dh-eliminar" onClick={() => eliminarDoc(d)}>
                             Eliminar
                           </button>
+                          {d.storage_path && (
+                            <button className="dh-eliminar" onClick={() => verOriginal(d)}>
+                              Ver original ↗
+                            </button>
+                          )}
                           <button className="dh-revisar" onClick={() => revisar(d)}>
                             Revisar y aplicar →
                           </button>
@@ -969,6 +987,26 @@ export default function DocumentosPage() {
                               {ne ? ` · ${ne} sin id.` : ""}
                               {d.modelo_ia ? ` · ${d.modelo_ia}` : ""}
                             </div>
+                            {(d.storage_path || !d.aplicado) && (
+                              <div className="dh-acciones">
+                                {!d.aplicado && (
+                                  <button
+                                    className="dh-eliminar"
+                                    onClick={() => eliminarDoc(d)}
+                                  >
+                                    Eliminar
+                                  </button>
+                                )}
+                                {d.storage_path && (
+                                  <button
+                                    className="dh-eliminar"
+                                    onClick={() => verOriginal(d)}
+                                  >
+                                    Ver original ↗
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

@@ -1,5 +1,28 @@
 ﻿import type { Vino } from "./types";
 
+/** Extracción PURA de un albarán: sin catálogo. El casado con el inventario
+ *  se hace después en código, igual que en la carta y el TPV. La IA casando
+ *  contra 600 referencias fallaba: devolvía albaranes vacíos. */
+export function promptExtraerAlbaran() {
+  return `Eres un asistente que transcribe albaranes y facturas de proveedores de vino de restaurante.
+
+Te paso un albarán o factura (foto o PDF), en español o inglés ("delivery note"). Transcribe TODAS las líneas de producto, sin saltarte ninguna.
+
+Devuelve SOLO un JSON válido, sin markdown:
+
+{"proveedor":"nombre del proveedor tal como figura","lineas":[{"texto":"línea tal cual aparece","bodega":"productor","nombre":"nombre del vino","anio":2019,"unidades":6,"precio_compra":24.5,"tipo":"Tinto","pais":"Francia","uva":"Merlot"}]}
+
+REGLAS:
+- "texto": la línea literal del documento (sirve para revisar después).
+- "bodega"/"nombre": sepáralos usando tu conocimiento de vinos (ej.: "Alter Ego Palmer" → bodega "Château Palmer", nombre "Alter Ego"). Si no está claro, deja bodega en null y pon todo en nombre.
+- "anio": añada si figura; null si no aparece o pone NV.
+- "unidades": botellas de la línea. Si el albarán va en cajas, multiplica (1 caja = 6 o 12 según indique).
+- "precio_compra": precio unitario SIN IVA si está desglosado; null si el documento no trae precios.
+- "tipo" (Espumoso, Blanco, Rosado, Tinto o Dulce), "pais" y "uva": dedúcelos con tu conocimiento del vino; null si no lo sabes.
+- NO incluyas portes, depósitos, envases, descuentos ni líneas que no sean bebida.
+- No inventes líneas: transcribe únicamente lo que ves.`;
+}
+
 export function promptAlbaranCierre(tipo: "albaran" | "cierre", vinos: Vino[]) {
   const catalogo = vinos
     .map((w) => `ID:${w.id} | ${w.bodega} | ${w.nombre} | ${w.anio ?? "NV"}`)

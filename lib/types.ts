@@ -38,6 +38,8 @@ export type DocumentoRow = {
   resultado: ResultadoDocumento | null;
   aplicado: boolean;
   created_at: string;
+  /** Ruta del fichero original en Storage (los cierres del cron no tienen) */
+  storage_path?: string | null;
 };
 
 /** Forma normalizada que guarda /api/documentos en documentos.resultado
