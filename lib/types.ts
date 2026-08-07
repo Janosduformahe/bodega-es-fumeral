@@ -28,6 +28,8 @@ export type Movimiento = {
   stock_nuevo: number;
   nota: string | null;
   created_at: string;
+  /** true = venta histórica cargada solo para análisis: nunca tocó el stock */
+  historico?: boolean;
 };
 
 export type DocumentoRow = {

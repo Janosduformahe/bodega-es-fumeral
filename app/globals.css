@@ -218,6 +218,21 @@ input[type=search]::placeholder{color:var(--hint);font-weight:400}
 .doc-visor-img{display:block;width:100%;max-height:58vh;object-fit:contain;background:#fff}
 .doc-visor-vacio{padding:34px 18px;text-align:center;font-size:13.5px;line-height:1.6;color:var(--muted)}
 
+/* ── Gráfica de evolución del stock (ficha del vino) ── */
+.gs-wrap{margin:14px 0 6px;background:var(--bg);border:1.5px solid var(--hairline);border-radius:var(--radius-sm);padding:10px 10px 6px}
+.gs-svg{display:block;width:100%;height:auto}
+.gs-grid{stroke:var(--hairline);stroke-width:1}
+.gs-eje{fill:var(--hint);font-size:9.5px;font-family:var(--font-sans)}
+.gs-area{fill:var(--brand);opacity:.09}
+.gs-linea{fill:none;stroke:var(--brand);stroke-width:2;stroke-linejoin:round}
+.gs-punto{fill:var(--brand);stroke:var(--bg);stroke-width:1.5}
+.gs-cursor{stroke:var(--muted2);stroke-width:1;stroke-dasharray:3 3}
+.gs-lectura{font-size:13px;color:var(--text);padding:7px 2px 2px;min-height:24px}
+.gs-lectura strong{color:var(--ink)}
+.gs-menos{color:var(--red);font-weight:600}
+.gs-mas{color:var(--green);font-weight:600}
+.gs-pista{color:var(--hint);font-size:12.5px}
+
 /* ── Equipo: sólo la ve el anfitrión ── */
 .hoja-opcion{display:flex;align-items:center;justify-content:space-between;width:100%;padding:17px 4px;font-size:16.5px;font-weight:650;color:var(--ink);border:none;background:none;border-top:1px solid var(--hairline);text-align:left}
 .hoja-opcion.salir{color:var(--red);font-weight:600}

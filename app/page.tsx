@@ -104,6 +104,120 @@ function AlertRow({ vino, onDismiss }: { vino: Vino; onDismiss: () => void }) {
   );
 }
 
+/** Evolución diaria del stock de un vino en los últimos 30 días.
+ *  Se reconstruye hacia atrás desde el stock actual con los movimientos
+ *  (los históricos del TPV no tocan stock y se ignoran). Línea escalonada:
+ *  el stock no tiene pendientes, cambia a saltos. */
+function GraficaStock({ movs, stockActual }: { movs: Movimiento[]; stockActual: number }) {
+  const [dia, setDia] = useState<number | null>(null);
+  const DIAS = 30;
+
+  const { serie, eventos, max } = useMemo(() => {
+    const hoy = new Date();
+    hoy.setHours(23, 59, 59, 999);
+    const inicio = hoy.getTime() - (DIAS - 1) * 86400000;
+    const reales = movs.filter((m) => !m.historico);
+    // stock al principio de la ventana = actual menos lo movido dentro de ella
+    let inicial = stockActual;
+    const porDia = new Map<number, { delta: number; tipos: string[] }>();
+    for (const m of reales) {
+      const t = new Date(m.created_at).getTime();
+      if (t < inicio) continue;
+      inicial -= m.qty;
+      const d = Math.floor((t - inicio) / 86400000);
+      const e = porDia.get(d) ?? { delta: 0, tipos: [] };
+      e.delta += m.qty;
+      e.tipos.push(m.tipo);
+      porDia.set(d, e);
+    }
+    const serie: number[] = [];
+    let s = Math.max(0, inicial);
+    for (let d = 0; d < DIAS; d++) {
+      s += porDia.get(d)?.delta ?? 0;
+      serie.push(Math.max(0, s));
+    }
+    return { serie, eventos: porDia, max: Math.max(...serie, 1) };
+  }, [movs, stockActual]);
+
+  const W = 440;
+  const H = 96;
+  const PAD = { t: 8, r: 6, b: 18, l: 26 };
+  const x = (d: number) => PAD.l + (d / (DIAS - 1)) * (W - PAD.l - PAD.r);
+  const y = (v: number) => PAD.t + (1 - v / max) * (H - PAD.t - PAD.b);
+
+  // línea escalonada: mantiene el valor hasta el día siguiente
+  let path = `M ${x(0)} ${y(serie[0])}`;
+  for (let d = 1; d < DIAS; d++) path += ` H ${x(d)} V ${y(serie[d])}`;
+  const area = `${path} V ${y(0)} H ${x(0)} Z`;
+
+  const fecha = (d: number) => {
+    const t = new Date(Date.now() - (DIAS - 1 - d) * 86400000);
+    return t.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  };
+  const medioY = Math.round(max / 2);
+
+  return (
+    <div className="gs-wrap">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="gs-svg"
+        role="img"
+        aria-label={`Evolución del stock en ${DIAS} días: de ${serie[0]} a ${serie[DIAS - 1]} botellas`}
+        onMouseLeave={() => setDia(null)}
+      >
+        {[0, medioY, max].filter((v, i, a) => a.indexOf(v) === i).map((v) => (
+          <g key={v}>
+            <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} className="gs-grid" />
+            <text x={PAD.l - 5} y={y(v) + 3.5} className="gs-eje" textAnchor="end">
+              {v}
+            </text>
+          </g>
+        ))}
+        <path d={area} className="gs-area" />
+        <path d={path} className="gs-linea" />
+        {[...eventos.keys()].map((d) => (
+          <circle key={d} cx={x(d)} cy={y(serie[d])} r={3.5} className="gs-punto" />
+        ))}
+        {dia !== null && (
+          <line x1={x(dia)} x2={x(dia)} y1={PAD.t} y2={H - PAD.b} className="gs-cursor" />
+        )}
+        {serie.map((_, d) => (
+          <rect
+            key={d}
+            x={x(d) - (W - PAD.l - PAD.r) / (DIAS - 1) / 2}
+            y={0}
+            width={(W - PAD.l - PAD.r) / (DIAS - 1)}
+            height={H}
+            fill="transparent"
+            onMouseEnter={() => setDia(d)}
+            onClick={() => setDia(d)}
+          />
+        ))}
+        <text x={PAD.l} y={H - 5} className="gs-eje">{fecha(0)}</text>
+        <text x={W - PAD.r} y={H - 5} className="gs-eje" textAnchor="end">
+          hoy
+        </text>
+      </svg>
+      <div className="gs-lectura" aria-live="polite">
+        {dia !== null ? (
+          <>
+            <strong>{fecha(dia)}</strong> · {serie[dia]} botellas
+            {eventos.has(dia) && (
+              <span className={eventos.get(dia)!.delta < 0 ? "gs-menos" : "gs-mas"}>
+                {" "}
+                ({eventos.get(dia)!.delta > 0 ? "+" : ""}
+                {eventos.get(dia)!.delta} · {[...new Set(eventos.get(dia)!.tipos)].join(", ")})
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="gs-pista">Toca un día para ver el detalle</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function InventarioPage() {
   const supabase = useMemo(() => createClient(), []);
   const [wines, setWines] = useState<Vino[]>([]);
@@ -276,7 +390,7 @@ export default function InventarioPage() {
       .select("*")
       .eq("vino_id", vino.id)
       .order("created_at", { ascending: false })
-      .limit(60);
+      .limit(200);
     setHistRows((data as Movimiento[]) || []);
   }
 
@@ -830,6 +944,9 @@ export default function InventarioPage() {
               {histVino.nombre}
               {histVino.anio ? ` — ${histVino.anio}` : ""}
             </div>
+            {histRows !== null && histRows.length > 0 && (
+              <GraficaStock movs={histRows} stockActual={histVino.stock} />
+            )}
             <div>
               {histRows === null ? (
                 <div style={{ color: "var(--hint)", fontSize: 13, padding: "12px 0" }}>
